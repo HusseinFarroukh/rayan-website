@@ -10,8 +10,8 @@ interface Activity {
   shortDescription: string;
   description: string;
   link?: string;
-  image?: string;
-  category?: string; // Added category field
+  image?: string; // Image field
+  category?: string;
 }
 
 interface Category {
@@ -23,7 +23,7 @@ interface Category {
 
 export default function Activities() {
   const [activities, setActivities] = useState<Activity[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]); // Added categories state
+  const [categories, setCategories] = useState<Category[]>([]);
   const [sectionTitle, setSectionTitle] = useState("");
   const [sectionDesc, setSectionDesc] = useState("");
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(
@@ -101,34 +101,64 @@ export default function Activities() {
             return (
               <div
                 key={activity.id}
-                className="bg-white rounded-2xl shadow hover:shadow-2xl transition-all p-6 flex flex-col items-center"
+                className="bg-white rounded-2xl shadow hover:shadow-2xl transition-all overflow-hidden flex flex-col"
               >
-                {/* Title */}
-                <h3 className="text-xl text-[#020d2b] font-bold mb-2 text-center">
-                  {activity.title}
-                </h3>
-
-                {/* Short Description for card */}
-                <p className="text-gray-600 text-center mb-2 line-clamp-3">
-                  {activity.shortDescription}
-                </p>
-
-                {/* Category Display */}
-                {categoryName && (
-                  <div className="mb-3">
-                    <span className="inline-block bg-[#020d2b] text-white px-3 py-1 rounded-full text-sm font-medium">
-                      {categoryName}
-                    </span>
+                {/* Activity Image */}
+                {activity.image ? (
+                  <div className="h-48 overflow-hidden">
+                    <img
+                      src={activity.image}
+                      alt={activity.title}
+                      className="w-full h-full object-cover transition-transform hover:scale-105"
+                    />
+                  </div>
+                ) : (
+                  <div className="h-48 bg-gray-200 flex items-center justify-center">
+                    <svg
+                      className="w-12 h-12 text-gray-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                      />
+                    </svg>
                   </div>
                 )}
 
-                {/* Button to open modal */}
-                <button
-                  onClick={() => setSelectedActivity(activity)}
-                  className="bg-[#020d2b] text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition mt-auto"
-                >
-                  Read More
-                </button>
+                {/* Card Content */}
+                <div className="p-6 flex flex-col flex-grow">
+                  {/* Title */}
+                  <h3 className="text-xl text-[#020d2b] font-bold mb-2 text-center">
+                    {activity.title}
+                  </h3>
+
+                  {/* Short Description for card */}
+                  <p className="text-gray-600 text-center mb-2 line-clamp-3 flex-grow">
+                    {activity.shortDescription}
+                  </p>
+
+                  {/* Category Display */}
+                  {categoryName && (
+                    <div className="mb-4 text-center">
+                      <span className="inline-block bg-[#020d2b] text-white px-3 py-1 rounded-full text-sm font-medium">
+                        {categoryName}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Button to open modal */}
+                  <button
+                    onClick={() => setSelectedActivity(activity)}
+                    className="bg-[#020d2b] text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition mt-auto"
+                  >
+                    Read More
+                  </button>
+                </div>
               </div>
             );
           })}
@@ -138,13 +168,25 @@ export default function Activities() {
       {/* Modal */}
       {selectedActivity && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-6 max-w-lg w-full relative">
+          <div className="bg-white rounded-2xl p-6 max-w-2xl w-full mx-4 relative">
             <button
               onClick={() => setSelectedActivity(null)}
               className="absolute top-4 right-4 text-gray-500 hover:text-gray-800 font-bold text-xl"
             >
               &times;
             </button>
+
+            {/* Modal Image */}
+            {selectedActivity.image && (
+              <div className="mb-4 rounded-lg overflow-hidden">
+                <img
+                  src={selectedActivity.image}
+                  alt={selectedActivity.title}
+                  className="w-full h-64 object-cover"
+                />
+              </div>
+            )}
+
             <h3 className="text-2xl font-bold mb-4">
               {selectedActivity.title}
             </h3>
@@ -158,7 +200,7 @@ export default function Activities() {
               </div>
             )}
 
-            <p className="text-gray-700">{selectedActivity.description}</p>
+            <p className="text-gray-700 mb-4">{selectedActivity.description}</p>
             {selectedActivity.link && (
               <a
                 href={selectedActivity.link}
