@@ -3,14 +3,17 @@
 import { useEffect, useState } from "react";
 import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { useRouter } from "next/navigation";
 
 export default function Hero() {
   const [heroData, setHeroData] = useState<{
     title: string;
     subtitle: string;
-
     description: string;
   } | null>(null);
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const router = useRouter();
 
   useEffect(() => {
     const unsubscribe = onSnapshot(doc(db, "home", "hero"), (snapshot) => {
@@ -23,8 +26,19 @@ export default function Hero() {
       }
     });
 
-    return () => unsubscribe(); // Clean up listener on unmount
+    return () => unsubscribe();
   }, []);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      // Navigate to activities page with search query
+      router.push(
+        `/activities?search=${encodeURIComponent(searchQuery.trim())}`
+      );
+    }
+  };
+
   return (
     <section className="flex bg-white flex-col items-center justify-center py-20">
       <h1 className="text-5xl sm:text-7xl font-extrabold text-center pb-6 bg-gradient-to-br from-[#020d2b] to-[#1b7a49] bg-clip-text text-transparent drop-shadow-xl">
@@ -35,11 +49,13 @@ export default function Hero() {
         {heroData?.description}
       </p>
       <div className="w-full max-w-xl mt-2 flex justify-center">
-        <form className="w-full">
+        <form className="w-full" onSubmit={handleSearch}>
           <div className="flex items-center bg-white rounded-full shadow-lg border border-gray-200 px-4 py-2">
             <input
               type="text"
               placeholder="Search for extracurriculars..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="flex-1 bg-transparent outline-none px-2 py-2 text-lg"
             />
             <button

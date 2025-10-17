@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { getAuth, onAuthStateChanged, signOut, User } from "firebase/auth";
 import { app } from "@/lib/firebase";
-// import Image from "next/image";
+import Image from "next/image";
 
 export default function Header() {
   const router = useRouter();
@@ -34,8 +34,14 @@ export default function Header() {
     <header className="w-full flex justify-center mt-6">
       <nav className="bg-white shadow-lg rounded-full flex items-center px-4 sm:px-8 py-3 gap-4 sm:gap-8 w-[98vw] max-w-6xl relative">
         <div className="flex items-center gap-2">
-          {/* <Image src="/logo.png" alt="Logo" width={32} height={32} /> */}
-          <span className="font-bold text-xl">LOGO</span>
+          {/* Logo Image */}
+          <Image
+            src="/logo.png"
+            alt="Logo"
+            width={129}
+            height={40}
+            className="object-contain w-16 h-5 sm:w-20 h-6 md:w-32 h-10 lg:w-40 h-12"
+          />
         </div>
 
         {/* Hamburger for mobile */}
@@ -123,7 +129,7 @@ export default function Header() {
             </a>
             <a
               className="px-4 py-2 rounded-lg font-medium text-[#020d2b] hover:bg-gray-100 w-11/12 text-center"
-              href="#"
+              href="/activities"
             >
               Activities Dashboard
             </a>

@@ -34,7 +34,7 @@ interface Activity {
   description: string;
   link?: string;
   category?: string;
-  image?: string; // Added image field
+  image?: string;
 }
 
 interface Category {
@@ -86,7 +86,7 @@ export default function Dashboard() {
   const [activityDescription, setActivityDescription] = useState("");
   const [activityLink, setActivityLink] = useState("");
   const [activityCategory, setActivityCategory] = useState("");
-  const [activityImage, setActivityImage] = useState(""); // Added image state
+  const [activityImage, setActivityImage] = useState("");
   const [activityEditId, setActivityEditId] = useState<string | null>(null);
 
   // ----- Aboutus State -----
@@ -112,16 +112,24 @@ export default function Dashboard() {
   // ----- Loading States -----
   const [loading, setLoading] = useState(false);
 
+  // ----- UI States -----
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [homeDropdownOpen, setHomeDropdownOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState<
+    "hero" | "services" | "categories" | "activities" | "aboutus" | "blogs"
+  >("hero");
+
   // ----- Helper function to build category tree -----
   const buildCategoryTree = (
     categories: Category[]
-  ): (Category & { level: number; children: Category[] })[] => {
+  ): (Category & { level: number })[] => {
     const categoryMap = new Map();
     const rootCategories: (Category & {
       level: number;
       children: Category[];
     })[] = [];
 
+    // Create tree structure
     categories.forEach((category) => {
       categoryMap.set(category.id, {
         ...category,
@@ -145,12 +153,16 @@ export default function Dashboard() {
       }
     });
 
+    // Corrected flattenTree function
     const flattenTree = (
       nodes: (Category & { level: number; children: Category[] })[],
       result: (Category & { level: number })[] = []
     ) => {
       nodes.forEach((node) => {
-        result.push({ ...node, children: [] });
+        // Create a new object without children property
+        const { children, ...nodeWithoutChildren } = node;
+        result.push({ ...nodeWithoutChildren, level: node.level });
+
         if (node.children.length > 0) {
           flattenTree(node.children, result);
         }
@@ -160,6 +172,9 @@ export default function Dashboard() {
 
     return flattenTree(rootCategories);
   };
+
+  // Build category tree for display
+  const categoryTree = buildCategoryTree(categories);
 
   // ----- Fetch Categories -----
   const fetchCategories = async () => {
@@ -540,7 +555,7 @@ export default function Dashboard() {
           description: activityDescription,
           link: activityLink,
           category: activityCategory,
-          image: activityImage, // Added image field
+          image: activityImage,
         });
         setActivityEditId(null);
       } else {
@@ -550,7 +565,7 @@ export default function Dashboard() {
           description: activityDescription,
           link: activityLink,
           category: activityCategory,
-          image: activityImage, // Added image field
+          image: activityImage,
         });
       }
       setActivityTitle("");
@@ -558,7 +573,7 @@ export default function Dashboard() {
       setActivityDescription("");
       setActivityLink("");
       setActivityCategory("");
-      setActivityImage(""); // Reset image field
+      setActivityImage("");
       fetchActivities();
     } catch (error) {
       console.error("Error saving activity:", error);
@@ -596,7 +611,7 @@ export default function Dashboard() {
     setActivityDescription(activity.description);
     setActivityLink(activity.link || "");
     setActivityCategory(activity.category || "");
-    setActivityImage(activity.image || ""); // Set image when editing
+    setActivityImage(activity.image || "");
   };
 
   const handleActivityDelete = async (id: string) => {
@@ -710,15 +725,6 @@ export default function Dashboard() {
       alert("Failed to update Blogs Section Title. See console.");
     }
   };
-
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [homeDropdownOpen, setHomeDropdownOpen] = useState(false);
-  const [activeSection, setActiveSection] = useState<
-    "hero" | "services" | "categories" | "activities" | "aboutus" | "blogs"
-  >("hero");
-
-  // Build category tree for display
-  const categoryTree = buildCategoryTree(categories);
 
   // ---------- JSX ----------
   return (
