@@ -32,7 +32,6 @@ export default function Hero() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      // Navigate to activities page with search query
       router.push(
         `/activities?search=${encodeURIComponent(searchQuery.trim())}`
       );
@@ -40,27 +39,38 @@ export default function Hero() {
   };
 
   return (
-    <section className="flex bg-white flex-col items-center justify-center py-20">
-      <h1 className="text-5xl sm:text-7xl font-extrabold text-center pb-6 bg-gradient-to-br from-[#020d2b] to-[#1b7a49] bg-clip-text text-transparent drop-shadow-xl">
-        {heroData?.title} <br />
-        {heroData?.subtitle}
-      </h1>
-      <p className="text-xl text-gray-600 text-center mb-10 max-w-2xl">
-        {heroData?.description}
-      </p>
-      <div className="w-full max-w-xl mt-2 flex justify-center">
+    <section className="flex bg-white flex-col items-center justify-center py-12 md:py-20 px-4 sm:px-6 lg:px-8">
+      {/* Hero Text */}
+      <div className="text-center max-w-4xl mx-auto">
+        <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-extrabold pb-4 sm:pb-6 bg-gradient-to-br from-[#020d2b] to-[#1b7a49] bg-clip-text text-transparent drop-shadow-xl leading-tight">
+          {heroData?.title}
+          {heroData?.subtitle && (
+            <>
+              <br className="hidden sm:block" />
+              <span className="block mt-2 sm:mt-0">{heroData.subtitle}</span>
+            </>
+          )}
+        </h1>
+
+        <p className="text-lg sm:text-xl lg:text-2xl text-gray-600 mb-8 sm:mb-10 max-w-2xl mx-auto leading-relaxed px-2">
+          {heroData?.description}
+        </p>
+      </div>
+
+      {/* Search Form */}
+      <div className="w-full max-w-md sm:max-w-lg lg:max-w-xl mt-4 sm:mt-6">
         <form className="w-full" onSubmit={handleSearch}>
-          <div className="flex items-center bg-white rounded-full shadow-lg border border-gray-200 px-4 py-2">
+          <div className="flex flex-col sm:flex-row items-center bg-white rounded-2xl sm:rounded-full shadow-lg border border-gray-200 px-4 py-3 sm:px-6 sm:py-3 gap-3 sm:gap-0">
             <input
               type="text"
               placeholder="Search for extracurriculars..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="flex-1 bg-transparent outline-none px-2 py-2 text-lg"
+              className="flex-1 bg-transparent outline-none px-2 py-2 sm:py-3 text-base sm:text-lg w-full text-center sm:text-left"
             />
             <button
               type="submit"
-              className="ml-2 px-6 py-2 rounded-full bg-[#020d2b] text-white font-semibold shadow hover:bg-[#69959e] transition"
+              className="w-full sm:w-auto px-6 py-3 rounded-xl sm:rounded-full bg-[#020d2b] text-white font-semibold shadow hover:bg-[#69959e] transition text-base sm:text-lg whitespace-nowrap"
             >
               Search
             </button>

@@ -9,6 +9,7 @@ interface Blog {
   id: string;
   title: string;
   excerpt: string;
+  description?: string; // Add full description field
   link?: string;
 }
 
@@ -16,8 +17,9 @@ export default function Blogs() {
   const [blogs, setBlogs] = useState<Blog[]>([]);
   const [sectionTitle, setSectionTitle] = useState("");
   const [sectionDesc, setSectionDesc] = useState("");
+  const [selectedBlog, setSelectedBlog] = useState<Blog | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // ref not strictly necessary for CSS marquee, but keep for future use
   const sliderRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -53,8 +55,8 @@ export default function Blogs() {
   // Duplicate items to create a seamless loop
   const loopItems = [...blogs, ...blogs];
 
-  // compute duration based on number of items (adjust multiplier as needed)
-  const baseDuration = 12; // seconds for a reasonable minimum speed
+  // compute duration based on number of items
+  const baseDuration = 12;
   const duration = Math.max(baseDuration, Math.round(blogs.length * 4));
 
   // Static local images (fallback)
@@ -66,6 +68,27 @@ export default function Blogs() {
     "/blog5.jpg",
     "/blog6.jpg",
   ];
+
+  // Handle read more click
+  const handleReadMore = (blog: Blog) => {
+    setSelectedBlog(blog);
+    setIsModalOpen(true);
+    document.body.style.overflow = "hidden"; // Prevent background scrolling
+  };
+
+  // Close modal
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedBlog(null);
+    document.body.style.overflow = "unset"; // Re-enable scrolling
+  };
+
+  // Close modal when clicking outside content
+  const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.target === e.currentTarget) {
+      handleCloseModal();
+    }
+  };
 
   return (
     <section className="py-20 bg-white">
@@ -108,16 +131,12 @@ export default function Blogs() {
                   <p className="text-gray-600 text-center mb-4">
                     {post.excerpt}
                   </p>
-                  {post.link && (
-                    <a
-                      href={post.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="bg-[#020d2b] text-white font-semibold px-4 py-2 rounded-xl shadow hover:bg-blue-300 transition"
-                    >
-                      Read More →
-                    </a>
-                  )}
+                  <button
+                    onClick={() => handleReadMore(post)}
+                    className="bg-[#020d2b] text-white font-semibold px-4 py-2 rounded-xl shadow hover:bg-blue-300 transition"
+                  >
+                    Read More →
+                  </button>
                 </article>
               ))}
             </div>
@@ -140,33 +159,73 @@ export default function Blogs() {
                   {post.title}
                 </h3>
                 <p className="text-gray-600 text-center mb-4">{post.excerpt}</p>
-                {post.link && (
-                  <a
-                    href={post.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="bg-[#020d2b] text-white font-semibold px-6 py-2 rounded-xl shadow hover:bg-blue-300 transition"
-                  >
-                    Read More →
-                  </a>
-                )}
+                <button
+                  onClick={() => handleReadMore(post)}
+                  className="bg-[#020d2b] text-white font-semibold px-6 py-2 rounded-xl shadow hover:bg-blue-300 transition"
+                >
+                  Read More →
+                </button>
               </article>
             ))}
           </div>
         )}
       </div>
 
+      {/* Blog Detail Modal */}
+      {isModalOpen && selectedBlog && (
+        <div
+          className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center z-50 p-4"
+          onClick={handleBackdropClick}
+        >
+          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="relative p-6">
+              {/* Close Button */}
+              <button
+                onClick={handleCloseModal}
+                className="absolute top-4 right-4 z-10 bg-white rounded-full p-2 shadow-lg hover:bg-gray-100 transition"
+                aria-label="Close modal"
+              >
+                <svg
+                  className="w-6 h-6 text-gray-700"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+
+              {/* Blog Content */}
+              <div className="pt-8">
+                <h2 className="text-2xl font-bold text-[#020d2b] mb-6 text-center">
+                  {selectedBlog.title}
+                </h2>
+
+                <div className="prose max-w-none">
+                  <p className="text-gray-600 text-lg leading-relaxed">
+                    {selectedBlog.description || selectedBlog.excerpt}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <style jsx>{`
         .marquee {
           display: flex;
           align-items: center;
-          /* linear infinite animation leftwards */
           animation-name: marquee;
           animation-timing-function: linear;
           animation-iteration-count: infinite;
         }
 
-        /* hide native scrollbar across browsers */
         .marquee::-webkit-scrollbar {
           display: none;
         }
