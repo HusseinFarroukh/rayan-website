@@ -21,6 +21,7 @@ export default function Header() {
 
   const handleSignOut = async () => {
     await signOut(auth);
+    setMenuOpen(false); // Close menu on sign out
     router.push("/");
   };
 
@@ -31,22 +32,67 @@ export default function Header() {
     : "";
 
   return (
-    <header className="w-full flex justify-center mt-6">
-      <nav className="bg-white shadow-lg rounded-full flex items-center px-4 sm:px-8 py-3 gap-4 sm:gap-8 w-[98vw] max-w-6xl relative">
-        <div className="flex items-center gap-2">
-          {/* Logo Image */}
+    <header className="w-full flex justify-center mt-4 sm:mt-6 px-3 sm:px-4">
+      <nav className="bg-white shadow-lg rounded-2xl sm:rounded-full flex items-center px-4 sm:px-6 lg:px-8 py-3 gap-3 sm:gap-6 lg:gap-8 w-full max-w-6xl relative">
+        {/* Logo */}
+        <div className="flex items-center gap-2 flex-shrink-0">
           <Image
             src="/logo.png"
             alt="Logo"
-            width={129}
-            height={40}
-            className="object-contain w-16 h-5 sm:w-20 h-6 md:w-32 h-10 lg:w-40 h-12"
+            width={160}
+            height={50}
+            className="object-contain w-24 h-6 sm:w-28 h-7 md:w-32 h-8 lg:w-40 h-10"
+            priority
           />
         </div>
 
-        {/* Hamburger for mobile */}
+        {/* Desktop Navigation */}
+        <ul className="hidden sm:flex flex-1 items-center gap-4 lg:gap-6 justify-center">
+          <li>
+            <a
+              className="px-4 py-2 rounded-lg font-medium bg-[#020d2b] text-white hover:bg-[#1a2d4d] transition text-sm lg:text-base"
+              href="#"
+            >
+              Home
+            </a>
+          </li>
+          <li>
+            <a
+              className="px-4 py-2 rounded-lg font-medium text-[#020d2b] hover:bg-gray-100 transition text-sm lg:text-base"
+              href="/activities"
+            >
+              Activities Dashboard
+            </a>
+          </li>
+        </ul>
+
+        {/* Desktop User Section */}
+        <div className="hidden sm:flex items-center gap-3 lg:gap-4 ml-auto">
+          {user ? (
+            <>
+              <span className="px-3 py-1.5 rounded-full bg-gray-100 text-[#020d2b] font-medium text-sm lg:text-base whitespace-nowrap overflow-hidden text-ellipsis max-w-32 lg:max-w-40">
+                {username}
+              </span>
+              <button
+                onClick={handleSignOut}
+                className="px-4 py-2 rounded-full bg-red-500 text-white font-semibold shadow hover:bg-red-400 transition text-sm lg:text-base whitespace-nowrap"
+              >
+                Sign Out
+              </button>
+            </>
+          ) : (
+            <a
+              className="px-5 py-2.5 rounded-full bg-[#020d2b] text-white font-semibold shadow hover:bg-[#69959e] transition text-sm lg:text-base whitespace-nowrap"
+              href="/auth"
+            >
+              Sign In
+            </a>
+          )}
+        </div>
+
+        {/* Mobile Hamburger Menu */}
         <button
-          className="sm:hidden ml-auto"
+          className="sm:hidden ml-auto flex-shrink-0"
           onClick={() => setMenuOpen((open) => !open)}
           aria-label="Toggle menu"
         >
@@ -74,87 +120,61 @@ export default function Header() {
           </svg>
         </button>
 
-        {/* Desktop Menu */}
-        <ul className="hidden sm:flex flex-1 items-center gap-6 justify-center">
-          <li>
-            <a
-              className="px-4 py-2 rounded-lg font-medium bg-[#020d2b] text-white"
-              href="#"
-            >
-              Home
-            </a>
-          </li>
-          <li>
-            <a
-              className="px-4 py-2 rounded-lg font-medium text-[#020d2b] hover:bg-gray-100"
-              href="/activities"
-            >
-              Activities Dashboard
-            </a>
-          </li>
-        </ul>
-
-        {/* Right side: show username if logged in, otherwise show Sign In */}
-        <div className="ml-auto flex items-center gap-3">
-          {user ? (
-            <>
-              <span className="px-3 py-1 rounded-full bg-gray-100 text-[#020d2b] font-medium">
-                {username}
-              </span>
-              <button
-                onClick={handleSignOut}
-                className="px-4 py-2 rounded-full bg-red-500 text-white font-semibold shadow hover:bg-red-400 transition"
-              >
-                Sign Out
-              </button>
-            </>
-          ) : (
-            <a
-              className="px-6 py-2 rounded-full bg-[#020d2b] text-white font-semibold shadow hover:bg-[#69959e] transition"
-              href="/auth"
-            >
-              Sign In
-            </a>
-          )}
-        </div>
-
-        {/* Mobile Menu */}
+        {/* Mobile Menu Overlay */}
         {menuOpen && (
-          <div className="absolute top-16 left-0 w-full bg-white rounded-b-2xl shadow-lg z-20 flex flex-col items-center gap-2 py-4 sm:hidden">
-            <a
-              className="px-4 py-2 rounded-lg font-medium bg-[#020d2b] text-white w-11/12 text-center"
-              href="#"
-            >
-              Home
-            </a>
-            <a
-              className="px-4 py-2 rounded-lg font-medium text-[#020d2b] hover:bg-gray-100 w-11/12 text-center"
-              href="/activities"
-            >
-              Activities Dashboard
-            </a>
+          <>
+            {/* Backdrop */}
+            <div
+              className="fixed inset-0 bg-black bg-opacity-50 z-40 sm:hidden"
+              onClick={() => setMenuOpen(false)}
+            />
 
-            {user ? (
-              <>
-                <div className="w-11/12 text-center px-4 py-2 rounded bg-gray-100 text-[#020d2b]">
-                  {username}
-                </div>
-                <button
-                  onClick={handleSignOut}
-                  className="px-6 py-2 rounded-full bg-red-500 text-white font-semibold shadow hover:bg-red-400 transition w-11/12"
-                >
-                  Sign Out
-                </button>
-              </>
-            ) : (
+            {/* Mobile Menu */}
+            <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-xl z-50 flex flex-col items-stretch gap-3 py-4 px-4 sm:hidden border border-gray-200">
+              {/* Mobile Navigation Links */}
               <a
-                className="px-6 py-2 rounded-full bg-[#020d2b] text-white font-semibold shadow hover:bg-[#69959e] transition w-11/12 text-center"
-                href="/auth"
+                className="px-4 py-3 rounded-xl font-medium bg-[#020d2b] text-white text-center text-base"
+                href="#"
+                onClick={() => setMenuOpen(false)}
               >
-                Sign In
+                Home
               </a>
-            )}
-          </div>
+              <a
+                className="px-4 py-3 rounded-xl font-medium text-[#020d2b] hover:bg-gray-100 text-center text-base border border-gray-200"
+                href="/activities"
+                onClick={() => setMenuOpen(false)}
+              >
+                Activities Dashboard
+              </a>
+
+              {/* Mobile User Section - Stacked with smaller text */}
+              <div className="border-t border-gray-200 pt-3 mt-1">
+                {user ? (
+                  <div className="flex flex-col gap-2">
+                    {/* Username with smaller text */}
+                    <div className="px-3 py-2 rounded-lg bg-gray-100 text-[#020d2b] text-center text-sm font-medium">
+                      {username}
+                    </div>
+                    {/* Sign Out with smaller text */}
+                    <button
+                      onClick={handleSignOut}
+                      className="px-3 py-2 rounded-lg bg-red-500 text-white font-semibold shadow hover:bg-red-400 transition text-sm"
+                    >
+                      Sign Out
+                    </button>
+                  </div>
+                ) : (
+                  <a
+                    className="px-4 py-3 rounded-xl bg-[#020d2b] text-white font-semibold shadow hover:bg-[#69959e] transition text-center text-base block"
+                    href="/auth"
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    Sign In
+                  </a>
+                )}
+              </div>
+            </div>
+          </>
         )}
       </nav>
     </header>
