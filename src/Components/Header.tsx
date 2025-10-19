@@ -39,9 +39,9 @@ export default function Header() {
           <Image
             src="/logo.png"
             alt="Logo"
-            width={160}
+            width={100}
             height={50}
-            className="object-contain w-24 h-6 sm:w-28 h-7 md:w-32 h-8 lg:w-40 h-10"
+            className="object-contain w-24  h-6 sm:w-28 h-7 md:w-32 h-8 lg:w-50 h-10"
             priority
           />
         </div>
@@ -125,7 +125,7 @@ export default function Header() {
           <>
             {/* Backdrop */}
             <div
-              className="fixed inset-0 bg-black bg-opacity-50 z-40 sm:hidden"
+              className="fixed inset-0 bg-black/50 bg-opacity-50 z-40 sm:hidden"
               onClick={() => setMenuOpen(false)}
             />
 

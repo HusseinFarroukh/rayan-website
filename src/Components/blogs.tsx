@@ -91,14 +91,14 @@ export default function Blogs() {
   };
 
   return (
-    <section className="py-20 bg-white">
-      <div className="max-w-6xl mx-auto px-4">
+    <section className="py-12 sm:py-16 lg:py-20 bg-white">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Title */}
-        <div className="flex flex-col items-center mb-12">
-          <h2 className="text-4xl text-[#020d2b] font-extrabold text-center mb-4">
+        <div className="flex flex-col items-center mb-8 sm:mb-10 lg:mb-12">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-center mb-3 sm:mb-4 text-[#020d2b]">
             {sectionTitle || "Latest Blog Posts"}
           </h2>
-          <p className="text-lg text-gray-600 text-center max-w-2xl">
+          <p className="text-base sm:text-lg text-gray-600 text-center max-w-2xl px-2 sm:px-0">
             {sectionDesc ||
               "Stay updated with our latest insights and stories."}
           </p>
@@ -106,34 +106,34 @@ export default function Blogs() {
 
         {/* Continuous looping marquee when more than 3 blogs */}
         {blogs.length > 3 ? (
-          <div className="relative overflow-hidden">
+          <div className="relative overflow-hidden py-4">
             <div
               ref={sliderRef}
-              className="flex gap-6 whitespace-nowrap marquee"
+              className="flex gap-4 sm:gap-6 marquee"
               style={{ animationDuration: `${duration}s` }}
               aria-hidden={false}
             >
               {loopItems.map((post, idx) => (
                 <article
                   key={post.id + "-" + idx}
-                  className="inline-flex flex-col items-center justify-start bg-gray-50 rounded-2xl shadow p-6 min-w-[280px] flex-shrink-0"
+                  className="inline-flex flex-col items-center justify-start bg-gray-50 rounded-xl sm:rounded-2xl shadow p-4 sm:p-6 min-w-[260px] sm:min-w-[280px] lg:min-w-[300px] flex-shrink-0"
                 >
                   <Image
                     src={staticImages[idx % staticImages.length]}
                     alt={post.title}
                     width={320}
                     height={180}
-                    className="rounded-xl object-cover mb-4 w-full h-44"
+                    className="rounded-lg sm:rounded-xl object-cover mb-3 sm:mb-4 w-full h-32 sm:h-36 lg:h-44"
                   />
-                  <h3 className="text-xl font-bold mb-2 text-center text-[#020d2b]">
+                  <h3 className="text-lg sm:text-xl font-bold mb-2 text-center text-[#020d2b] line-clamp-2">
                     {post.title}
                   </h3>
-                  <p className="text-gray-600 text-center mb-4">
+                  <p className="text-gray-600 text-center mb-3 sm:mb-4 text-sm sm:text-base line-clamp-3">
                     {post.excerpt}
                   </p>
                   <button
                     onClick={() => handleReadMore(post)}
-                    className="bg-[#020d2b] text-white font-semibold px-4 py-2 rounded-xl shadow hover:bg-blue-300 transition"
+                    className="bg-[#020d2b] text-white font-semibold px-3 sm:px-4 py-2 rounded-lg sm:rounded-xl shadow hover:bg-blue-300 transition text-sm sm:text-base w-full sm:w-auto"
                   >
                     Read More →
                   </button>
@@ -142,26 +142,34 @@ export default function Blogs() {
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div
+            className={`grid grid-cols-1 ${
+              blogs.length >= 2 ? "sm:grid-cols-2" : "sm:grid-cols-1"
+            } ${
+              blogs.length >= 3 ? "lg:grid-cols-3" : ""
+            } gap-4 sm:gap-6 lg:gap-8 justify-center`}
+          >
             {blogs.map((post, idx) => (
               <article
                 key={post.id}
-                className="bg-gray-50 rounded-2xl shadow hover:shadow-2xl transition p-6 flex flex-col items-center"
+                className="bg-gray-50 rounded-xl sm:rounded-2xl shadow hover:shadow-lg transition p-4 sm:p-6 flex flex-col items-center"
               >
                 <Image
                   src={staticImages[idx % staticImages.length]}
                   alt={post.title}
                   width={320}
                   height={180}
-                  className="rounded-xl object-cover mb-4"
+                  className="rounded-lg sm:rounded-xl object-cover mb-3 sm:mb-4 w-full h-32 sm:h-36 lg:h-44"
                 />
-                <h3 className="text-xl font-bold mb-2 text-center text-[#020d2b]">
+                <h3 className="text-lg sm:text-xl font-bold mb-2 text-center text-[#020d2b] line-clamp-2">
                   {post.title}
                 </h3>
-                <p className="text-gray-600 text-center mb-4">{post.excerpt}</p>
+                <p className="text-gray-600 text-center mb-3 sm:mb-4 text-sm sm:text-base line-clamp-3 flex-1">
+                  {post.excerpt}
+                </p>
                 <button
                   onClick={() => handleReadMore(post)}
-                  className="bg-[#020d2b] text-white font-semibold px-6 py-2 rounded-xl shadow hover:bg-blue-300 transition"
+                  className="bg-[#020d2b] text-white font-semibold px-4 sm:px-6 py-2 rounded-lg sm:rounded-xl shadow hover:bg-blue-300 transition text-sm sm:text-base w-full sm:w-auto"
                 >
                   Read More →
                 </button>
@@ -174,19 +182,19 @@ export default function Blogs() {
       {/* Blog Detail Modal */}
       {isModalOpen && selectedBlog && (
         <div
-          className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center z-50 p-4"
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-3 sm:p-4"
           onClick={handleBackdropClick}
         >
-          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="relative p-6">
+          <div className="bg-white rounded-xl sm:rounded-2xl max-w-2xl w-full max-h-[85vh] sm:max-h-[90vh] overflow-y-auto mx-auto">
+            <div className="relative p-4 sm:p-6">
               {/* Close Button */}
               <button
                 onClick={handleCloseModal}
-                className="absolute top-4 right-4 z-10 bg-white rounded-full p-2 shadow-lg hover:bg-gray-100 transition"
+                className="absolute top-2 right-2 sm:top-4 sm:right-4 z-10 bg-white rounded-full p-1 sm:p-2 shadow-lg hover:bg-gray-100 transition"
                 aria-label="Close modal"
               >
                 <svg
-                  className="w-6 h-6 text-gray-700"
+                  className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -201,13 +209,13 @@ export default function Blogs() {
               </button>
 
               {/* Blog Content */}
-              <div className="pt-8">
-                <h2 className="text-2xl font-bold text-[#020d2b] mb-6 text-center">
+              <div className="pt-6 sm:pt-8">
+                <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-[#020d2b] mb-4 sm:mb-6 text-center">
                   {selectedBlog.title}
                 </h2>
 
                 <div className="prose max-w-none">
-                  <p className="text-gray-600 text-lg leading-relaxed">
+                  <p className="text-gray-600 text-base sm:text-lg leading-relaxed sm:leading-loose">
                     {selectedBlog.description || selectedBlog.excerpt}
                   </p>
                 </div>
@@ -241,6 +249,21 @@ export default function Blogs() {
           100% {
             transform: translateX(-50%);
           }
+        }
+
+        /* Line clamp utilities */
+        .line-clamp-2 {
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+        }
+
+        .line-clamp-3 {
+          display: -webkit-box;
+          -webkit-line-clamp: 3;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
         }
       `}</style>
     </section>
