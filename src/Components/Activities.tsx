@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { collection, onSnapshot, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import Image from "next/image"; // Import Next.js Image component
 
 interface Activity {
   id: string;
@@ -80,6 +81,9 @@ export default function Activities() {
     return category ? category.name : null;
   };
 
+  // Get only first 3 activities
+  const displayedActivities = activities.slice(0, 3);
+
   return (
     <section className="py-20 bg-white">
       <div className="max-w-6xl mx-auto px-4">
@@ -93,9 +97,9 @@ export default function Activities() {
           </p>
         </div>
 
-        {/* Activities Cards */}
+        {/* Activities Cards - Only show 3 */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {activities.map((activity) => {
+          {displayedActivities.map((activity) => {
             const categoryName = getCategoryName(activity.category);
 
             return (
@@ -105,11 +109,13 @@ export default function Activities() {
               >
                 {/* Activity Image */}
                 {activity.image ? (
-                  <div className="h-48 overflow-hidden">
-                    <img
+                  <div className="h-48 overflow-hidden relative">
+                    <Image
                       src={activity.image}
                       alt={activity.title}
-                      className="w-full h-full object-cover transition-transform hover:scale-105"
+                      fill
+                      className="object-cover transition-transform hover:scale-105"
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 33vw, 25vw"
                     />
                   </div>
                 ) : (
@@ -145,7 +151,8 @@ export default function Activities() {
                   {/* Category Display */}
                   {categoryName && (
                     <div className="mb-4 text-center">
-                      <span className="inline-block bg-[#020d2b] text-white px-3 py-1 rounded-full text-sm font-medium">
+                      <span className="inline-flex items-center  text-black px-3 py-1 rounded-full text-sm font-medium">
+                        <span className="w-2 h-2 bg-red-500 rounded-full mr-2"></span>
                         {categoryName}
                       </span>
                     </div>
@@ -154,7 +161,7 @@ export default function Activities() {
                   {/* Button to open modal */}
                   <button
                     onClick={() => setSelectedActivity(activity)}
-                    className="bg-[#020d2b] text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition mt-auto"
+                    className="bg-gradient-to-br from-[#020d2b] to-[#1b7a49] hover:from-[#1b7a49] hover:to-[#020d2b] text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition mt-auto"
                   >
                     Read More
                   </button>
@@ -163,12 +170,33 @@ export default function Activities() {
             );
           })}
         </div>
+
+        {/* Show message if there are more activities */}
+        {activities.length > 3 && (
+          <div className="text-center mt-12">
+            <p className="text-gray-600 mb-4">
+              Showing 3 of {activities.length} activities
+            </p>
+            <a
+              href="/activities"
+              className="inline-block bg-[#020d2b] text-white px-6 py-3 rounded-lg hover:bg-gray-800 transition font-semibold"
+            >
+              View All Activities
+            </a>
+          </div>
+        )}
       </div>
 
       {/* Modal */}
       {selectedActivity && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-6 max-w-2xl w-full mx-4 relative">
+        <div
+          className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center z-50"
+          onClick={() => setSelectedActivity(null)}
+        >
+          <div
+            className="bg-white rounded-2xl p-6 max-w-2xl w-full mx-4 relative"
+            onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside modal
+          >
             <button
               onClick={() => setSelectedActivity(null)}
               className="absolute top-4 right-4 text-gray-500 hover:text-gray-800 font-bold text-xl"
@@ -178,23 +206,26 @@ export default function Activities() {
 
             {/* Modal Image */}
             {selectedActivity.image && (
-              <div className="mb-4 rounded-lg overflow-hidden">
-                <img
+              <div className="mb-4 rounded-lg overflow-hidden relative h-64">
+                <Image
                   src={selectedActivity.image}
                   alt={selectedActivity.title}
-                  className="w-full h-64 object-cover"
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 768px) 90vw, 600px"
                 />
               </div>
             )}
 
-            <h3 className="text-2xl font-bold mb-4">
+            <h3 className="text-2xl font-bold mb-4 text-black">
               {selectedActivity.title}
             </h3>
 
             {/* Category in Modal */}
             {selectedActivity.category && (
               <div className="mb-3">
-                <span className="inline-block bg-[#020d2b] text-white px-3 py-1 rounded-full text-sm font-medium">
+                <span className="inline-flex items-center text-black px-3 py-1 rounded-full text-sm font-medium">
+                  <span className="w-2 h-2 bg-red-500 rounded-full mr-2"></span>
                   {getCategoryName(selectedActivity.category)}
                 </span>
               </div>

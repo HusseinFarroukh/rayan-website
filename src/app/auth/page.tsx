@@ -77,8 +77,27 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-black rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+    <div className="min-h-screen relative flex items-center justify-center p-4">
+      {/* Video Background */}
+      <div className="absolute inset-0 w-full h-full">
+        <video
+          autoPlay
+          muted
+          loop
+          playsInline
+          className="w-full h-full object-cover"
+        >
+          <source src="/bg.mp4" type="video/mp4" />
+          {/* You can add multiple sources for better browser compatibility */}
+          <source src="/auth-background.webm" type="video/webm" />
+          Your browser does not support the video tag.
+        </video>
+        {/* Overlay for better readability */}
+        <div className="absolute inset-0 bg-black/50"></div>
+      </div>
+
+      {/* Content */}
+      <div className="max-w-md w-full bg-black/80 backdrop-blur-sm rounded-lg shadow-2xl border border-gray-700 overflow-hidden relative z-10">
         {error && (
           <div className="bg-red-500 text-white text-center py-2">{error}</div>
         )}
@@ -89,7 +108,7 @@ export default function AuthPage() {
             <h2 className="text-2xl font-bold text-center text-white">
               Welcome back
             </h2>
-            <p className="text-gray-400 text-center mt-2">
+            <p className="text-gray-300 text-center mt-2">
               Sign in to your account
             </p>
           </div>
@@ -98,7 +117,7 @@ export default function AuthPage() {
             <input
               type="email"
               placeholder="Email address"
-              className="w-full px-4 py-3 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 rounded-lg bg-white/10 border border-gray-600 text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               value={loginData.email}
               onChange={(e) =>
                 setLoginData({ ...loginData, email: e.target.value })
@@ -109,7 +128,7 @@ export default function AuthPage() {
             <input
               type="password"
               placeholder="Password"
-              className="w-full px-4 py-3 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 rounded-lg bg-white/10 border border-gray-600 text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               value={loginData.password}
               onChange={(e) =>
                 setLoginData({ ...loginData, password: e.target.value })
@@ -120,18 +139,18 @@ export default function AuthPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition"
+              className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition disabled:opacity-50"
             >
               {loading ? "Signing in..." : "Sign in"}
             </button>
           </form>
 
           <div className="mt-6 text-center">
-            <p className="text-gray-400">
-              Don’t have an account?{" "}
+            <p className="text-gray-300">
+              Do not have an account?{" "}
               <button
                 onClick={() => setIsLogin(false)}
-                className="text-blue-500 font-medium"
+                className="text-blue-400 font-medium hover:text-blue-300 transition"
               >
                 Sign up
               </button>
@@ -145,7 +164,7 @@ export default function AuthPage() {
             <h2 className="text-2xl font-bold text-center text-white">
               Join us
             </h2>
-            <p className="text-gray-400 text-center mt-2">
+            <p className="text-gray-300 text-center mt-2">
               Create your account
             </p>
           </div>
@@ -154,7 +173,7 @@ export default function AuthPage() {
             <input
               type="text"
               placeholder="Full Name"
-              className="w-full px-4 py-3 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 rounded-lg bg-white/10 border border-gray-600 text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               value={signupData.fullName}
               onChange={(e) =>
                 setSignupData({ ...signupData, fullName: e.target.value })
@@ -165,7 +184,7 @@ export default function AuthPage() {
             <input
               type="text"
               placeholder="Username"
-              className="w-full px-4 py-3 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 rounded-lg bg-white/10 border border-gray-600 text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               value={signupData.username}
               onChange={(e) =>
                 setSignupData({ ...signupData, username: e.target.value })
@@ -176,7 +195,7 @@ export default function AuthPage() {
             <input
               type="email"
               placeholder="Email address"
-              className="w-full px-4 py-3 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 rounded-lg bg-white/10 border border-gray-600 text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               value={signupData.email}
               onChange={(e) =>
                 setSignupData({ ...signupData, email: e.target.value })
@@ -187,7 +206,7 @@ export default function AuthPage() {
             <input
               type="password"
               placeholder="Password"
-              className="w-full px-4 py-3 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 rounded-lg bg-white/10 border border-gray-600 text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               value={signupData.password}
               onChange={(e) =>
                 setSignupData({ ...signupData, password: e.target.value })
@@ -198,18 +217,18 @@ export default function AuthPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition"
+              className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition disabled:opacity-50"
             >
               {loading ? "Creating..." : "Create Account"}
             </button>
           </form>
 
           <div className="mt-6 text-center">
-            <p className="text-gray-400">
+            <p className="text-gray-300">
               Already have an account?{" "}
               <button
                 onClick={() => setIsLogin(true)}
-                className="text-blue-500 font-medium"
+                className="text-blue-400 font-medium hover:text-blue-300 transition"
               >
                 Sign in
               </button>

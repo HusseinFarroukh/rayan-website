@@ -1,21 +1,57 @@
 "use client";
 import Image from "next/image";
+import { useEffect, useState } from "react";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "@/lib/firebase"; // Adjust path as needed
+
+interface University {
+  id: string;
+  name: string;
+  image?: string;
+}
 
 export default function UniActivities() {
-  const universities = [
-    { name: "AUB", image: "/aub.png" },
-    { name: "LAU", image: "/lau.png" },
-    { name: "Notre Dame University", image: "/ndu.png" },
-    { name: "USJ", image: "/usj.png" },
-    { name: "BAU", image: "/bau.png" },
-    { name: "LU", image: "/lu.png" },
+  const [universities, setUniversities] = useState<University[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch universities from Firestore
+  const fetchUniversities = async () => {
+    try {
+      const snapshot = await getDocs(collection(db, "universities"));
+      const data = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...(doc.data() as Omit<University, "id">),
+      }));
+      setUniversities(data);
+    } catch (error) {
+      console.error("Error fetching universities:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUniversities();
+  }, []);
+
+  // Filter only universities that have images and duplicate for seamless marquee
+  const universitiesWithImages = universities.filter((uni) => uni.image);
+  const marqueeUniversities = [
+    ...universitiesWithImages,
+    ...universitiesWithImages,
   ];
 
-  // Duplicate the array to ensure seamless looping
-  const marqueeUniversities = [...universities, ...universities];
+  // Don't display anything if no universities with images
+  if (loading) {
+    return null; // or you can return a loading spinner
+  }
+
+  if (universitiesWithImages.length === 0) {
+    return null; // Don't display anything if no images
+  }
 
   return (
-    <section className=" w-full">
+    <section className="w-full">
       <div className="max-w-5xl mx-auto px-4">
         <div className="overflow-hidden relative h-24 flex items-center">
           <div
@@ -23,13 +59,13 @@ export default function UniActivities() {
             style={{ minWidth: "max-content" }}
           >
             {marqueeUniversities.map((uni, idx) => (
-              <span key={uni.name + idx} className="relative inline-block">
+              <span key={uni.id + idx} className="relative inline-block">
                 <Image
-                  src={uni.image}
+                  src={uni.image!}
                   alt={uni.name}
                   width={200}
                   height={200}
-                  className=" object-contain"
+                  className="object-contain"
                 />
               </span>
             ))}

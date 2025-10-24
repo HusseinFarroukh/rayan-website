@@ -12,6 +12,8 @@ import {
   setDoc,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { createClient } from "@supabase/supabase-js";
+import Image from "next/image";
 
 // ----------- Interfaces -----------
 interface Hero {
@@ -48,6 +50,7 @@ interface Aboutus {
   id: string;
   Title: string;
   Description: string;
+  image?: string;
 }
 
 interface Blog {
@@ -56,7 +59,26 @@ interface Blog {
   description: string;
   excerpt?: string;
   link?: string;
+  image?: string;
 }
+
+interface University {
+  id: string;
+  name: string;
+  image?: string;
+}
+
+// Extended interface for category tree
+interface CategoryNode extends Category {
+  level: number;
+  children: CategoryNode[];
+}
+
+// Supabase client
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 // ----------- Component -----------
 export default function Dashboard() {
@@ -88,11 +110,22 @@ export default function Dashboard() {
   const [activityCategory, setActivityCategory] = useState("");
   const [activityImage, setActivityImage] = useState("");
   const [activityEditId, setActivityEditId] = useState<string | null>(null);
+  const [activityImageUpload, setActivityImageUpload] = useState<File | null>(
+    null
+  );
+  const [activityUploadProgress, setActivityUploadProgress] = useState(0);
+  const [isActivityUploading, setIsActivityUploading] = useState(false);
 
   // ----- Aboutus State -----
   const [AboutusData, setAboutusData] = useState<Aboutus | null>(null);
   const [AboutusTitle, setAboutusTitle] = useState("");
   const [AboutusDescription, setAboutusDescription] = useState("");
+  const [AboutusImage, setAboutusImage] = useState("");
+  const [AboutusImageUpload, setAboutusImageUpload] = useState<File | null>(
+    null
+  );
+  const [AboutusUploadProgress, setAboutusUploadProgress] = useState(0);
+  const [isAboutusUploading, setIsAboutusUploading] = useState(false);
 
   // ----- Blogs State -----
   const [blogs, setBlogs] = useState<Blog[]>([]);
@@ -103,6 +136,20 @@ export default function Dashboard() {
   const [blogsDescription, setBlogsDescription] = useState("");
   const [blogExcerpt, setBlogExcerpt] = useState("");
   const [blogLink, setBlogLink] = useState("");
+  const [blogImage, setBlogImage] = useState("");
+  const [blogImageUpload, setBlogImageUpload] = useState<File | null>(null);
+  const [blogUploadProgress, setBlogUploadProgress] = useState(0);
+  const [isBlogUploading, setIsBlogUploading] = useState(false);
+
+  // ----- Universities State -----
+  const [universities, setUniversities] = useState<University[]>([]);
+  const [universityName, setUniversityName] = useState("");
+  const [universityImage, setUniversityImage] = useState("");
+  const [universityImageUpload, setUniversityImageUpload] =
+    useState<File | null>(null);
+  const [universityUploadProgress, setUniversityUploadProgress] = useState(0);
+  const [isUniversityUploading, setIsUniversityUploading] = useState(false);
+  const [universityEditId, setUniversityEditId] = useState<string | null>(null);
 
   // ----- Section Titles -----
   const [servicesTitle, setServicesTitle] = useState("");
@@ -116,18 +163,21 @@ export default function Dashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [homeDropdownOpen, setHomeDropdownOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<
-    "hero" | "services" | "categories" | "activities" | "aboutus" | "blogs"
+    | "hero"
+    | "services"
+    | "categories"
+    | "activities"
+    | "aboutus"
+    | "blogs"
+    | "universities"
   >("hero");
 
   // ----- Helper function to build category tree -----
   const buildCategoryTree = (
     categories: Category[]
   ): (Category & { level: number })[] => {
-    const categoryMap = new Map();
-    const rootCategories: (Category & {
-      level: number;
-      children: Category[];
-    })[] = [];
+    const categoryMap = new Map<string, CategoryNode>();
+    const rootCategories: CategoryNode[] = [];
 
     // Create tree structure
     categories.forEach((category) => {
@@ -140,6 +190,8 @@ export default function Dashboard() {
 
     categories.forEach((category) => {
       const categoryNode = categoryMap.get(category.id);
+      if (!categoryNode) return;
+
       if (category.parentId) {
         const parent = categoryMap.get(category.parentId);
         if (parent) {
@@ -153,14 +205,14 @@ export default function Dashboard() {
       }
     });
 
-    // Corrected flattenTree function
+    // Flatten tree for display
     const flattenTree = (
-      nodes: (Category & { level: number; children: Category[] })[],
+      nodes: CategoryNode[],
       result: (Category & { level: number })[] = []
-    ) => {
+    ): (Category & { level: number })[] => {
       nodes.forEach((node) => {
         // Create a new object without children property
-        const { children, ...nodeWithoutChildren } = node;
+        const { ...nodeWithoutChildren } = node;
         result.push({ ...nodeWithoutChildren, level: node.level });
 
         if (node.children.length > 0) {
@@ -251,6 +303,7 @@ export default function Dashboard() {
         setAboutusData({ id: AboutusDoc.id, ...data });
         setAboutusTitle(data.Title);
         setAboutusDescription(data.Description);
+        setAboutusImage(data.image || "");
       }
     } catch (error) {
       console.error("Error fetching aboutus:", error);
@@ -269,12 +322,28 @@ export default function Dashboard() {
           ...(d.data() as Omit<Blog, "id"> & {
             excerpt?: string;
             link?: string;
+            image?: string;
           }),
         }));
       setBlogs(data);
     } catch (error) {
       console.error("Error fetching blogs:", error);
       alert("Failed to fetch blogs");
+    }
+  };
+
+  // ----- Fetch Universities -----
+  const fetchUniversities = async () => {
+    try {
+      const snapshot = await getDocs(collection(db, "universities"));
+      const data = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...(doc.data() as Omit<University, "id">),
+      }));
+      setUniversities(data);
+    } catch (error) {
+      console.error("Error fetching universities:", error);
+      alert("Failed to fetch universities");
     }
   };
 
@@ -320,6 +389,202 @@ export default function Dashboard() {
     }
   };
 
+  // ----- Supabase Image Upload for Activities -----
+  const handleActivityImageUpload = async () => {
+    if (!activityImageUpload) {
+      alert("Please select an image first");
+      return;
+    }
+
+    setIsActivityUploading(true);
+    setActivityUploadProgress(0);
+
+    try {
+      const fileExt = activityImageUpload.name.split(".").pop();
+      const fileName = `${Date.now()}.${fileExt}`;
+      const filePath = `activities/${fileName}`;
+
+      const progressInterval = setInterval(() => {
+        setActivityUploadProgress((prev) => {
+          if (prev >= 90) {
+            clearInterval(progressInterval);
+            return 90;
+          }
+          return prev + 10;
+        });
+      }, 200);
+
+      const { error } = await supabase.storage
+        .from("images")
+        .upload(filePath, activityImageUpload);
+
+      if (error) throw error;
+
+      const { data: urlData } = supabase.storage
+        .from("images")
+        .getPublicUrl(filePath);
+
+      clearInterval(progressInterval);
+      setActivityUploadProgress(100);
+      setActivityImage(urlData.publicUrl);
+      alert("Image uploaded successfully!");
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      alert("Failed to upload image");
+    } finally {
+      setIsActivityUploading(false);
+      setActivityUploadProgress(0);
+      setActivityImageUpload(null);
+    }
+  };
+
+  // ----- Supabase Image Upload for Blogs -----
+  const handleBlogImageUpload = async () => {
+    if (!blogImageUpload) {
+      alert("Please select an image first");
+      return;
+    }
+
+    setIsBlogUploading(true);
+    setBlogUploadProgress(0);
+
+    try {
+      const fileExt = blogImageUpload.name.split(".").pop();
+      const fileName = `${Date.now()}.${fileExt}`;
+      const filePath = `blogs/${fileName}`;
+
+      const progressInterval = setInterval(() => {
+        setBlogUploadProgress((prev) => {
+          if (prev >= 90) {
+            clearInterval(progressInterval);
+            return 90;
+          }
+          return prev + 10;
+        });
+      }, 200);
+
+      const { error } = await supabase.storage
+        .from("images")
+        .upload(filePath, blogImageUpload);
+
+      if (error) throw error;
+
+      const { data: urlData } = supabase.storage
+        .from("images")
+        .getPublicUrl(filePath);
+
+      clearInterval(progressInterval);
+      setBlogUploadProgress(100);
+      setBlogImage(urlData.publicUrl);
+      alert("Image uploaded successfully!");
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      alert("Failed to upload image");
+    } finally {
+      setIsBlogUploading(false);
+      setBlogUploadProgress(0);
+      setBlogImageUpload(null);
+    }
+  };
+
+  // ----- Supabase Image Upload for Aboutus -----
+  const handleAboutusImageUpload = async () => {
+    if (!AboutusImageUpload) {
+      alert("Please select an image first");
+      return;
+    }
+
+    setIsAboutusUploading(true);
+    setAboutusUploadProgress(0);
+
+    try {
+      const fileExt = AboutusImageUpload.name.split(".").pop();
+      const fileName = `${Date.now()}.${fileExt}`;
+      const filePath = `aboutus/${fileName}`;
+
+      const progressInterval = setInterval(() => {
+        setAboutusUploadProgress((prev) => {
+          if (prev >= 90) {
+            clearInterval(progressInterval);
+            return 90;
+          }
+          return prev + 10;
+        });
+      }, 200);
+
+      const { error } = await supabase.storage
+        .from("images")
+        .upload(filePath, AboutusImageUpload);
+
+      if (error) throw error;
+
+      const { data: urlData } = supabase.storage
+        .from("images")
+        .getPublicUrl(filePath);
+
+      clearInterval(progressInterval);
+      setAboutusUploadProgress(100);
+      setAboutusImage(urlData.publicUrl);
+      alert("Image uploaded successfully!");
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      alert("Failed to upload image");
+    } finally {
+      setIsAboutusUploading(false);
+      setAboutusUploadProgress(0);
+      setAboutusImageUpload(null);
+    }
+  };
+
+  // ----- Supabase Image Upload for Universities -----
+  const handleUniversityImageUpload = async () => {
+    if (!universityImageUpload) {
+      alert("Please select an image first");
+      return;
+    }
+
+    setIsUniversityUploading(true);
+    setUniversityUploadProgress(0);
+
+    try {
+      const fileExt = universityImageUpload.name.split(".").pop();
+      const fileName = `${Date.now()}.${fileExt}`;
+      const filePath = `universities/${fileName}`;
+
+      const progressInterval = setInterval(() => {
+        setUniversityUploadProgress((prev) => {
+          if (prev >= 90) {
+            clearInterval(progressInterval);
+            return 90;
+          }
+          return prev + 10;
+        });
+      }, 200);
+
+      const { error } = await supabase.storage
+        .from("images")
+        .upload(filePath, universityImageUpload);
+
+      if (error) throw error;
+
+      const { data: urlData } = supabase.storage
+        .from("images")
+        .getPublicUrl(filePath);
+
+      clearInterval(progressInterval);
+      setUniversityUploadProgress(100);
+      setUniversityImage(urlData.publicUrl);
+      alert("Image uploaded successfully!");
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      alert("Failed to upload image");
+    } finally {
+      setIsUniversityUploading(false);
+      setUniversityUploadProgress(0);
+      setUniversityImageUpload(null);
+    }
+  };
+
   useEffect(() => {
     fetchHero();
     fetchServices();
@@ -328,6 +593,7 @@ export default function Dashboard() {
     fetchSectionTitles();
     fetchAboutus();
     fetchBlogs();
+    fetchUniversities();
   }, []);
 
   // ----- Category Add/Update -----
@@ -453,6 +719,7 @@ export default function Dashboard() {
       await updateDoc(docRef, {
         Title: AboutusTitle,
         Description: AboutusDescription,
+        image: AboutusImage,
       });
       alert("Aboutus Section updated!");
       fetchAboutus();
@@ -534,6 +801,26 @@ export default function Dashboard() {
     }
   };
 
+  // ----- Service Edit/Delete -----
+  const handleServiceEdit = (service: Service) => {
+    setServiceEditId(service.id);
+    setServiceTitle(service.title);
+    setServiceDescription(service.description);
+  };
+
+  const handleServiceDelete = async (id: string) => {
+    const confirmed = confirm("Are you sure to delete this service?");
+    if (!confirmed) return;
+
+    try {
+      await deleteDoc(doc(db, "services", id));
+      fetchServices();
+    } catch (error) {
+      console.error("Error deleting service:", error);
+      alert("Failed to delete service");
+    }
+  };
+
   // ----- Activity Add/Update -----
   const handleActivitySubmit = async () => {
     if (
@@ -583,26 +870,6 @@ export default function Dashboard() {
     }
   };
 
-  // ----- Service Edit/Delete -----
-  const handleServiceEdit = (service: Service) => {
-    setServiceEditId(service.id);
-    setServiceTitle(service.title);
-    setServiceDescription(service.description);
-  };
-
-  const handleServiceDelete = async (id: string) => {
-    const confirmed = confirm("Are you sure to delete this service?");
-    if (!confirmed) return;
-
-    try {
-      await deleteDoc(doc(db, "services", id));
-      fetchServices();
-    } catch (error) {
-      console.error("Error deleting service:", error);
-      alert("Failed to delete service");
-    }
-  };
-
   // ----- Activity Edit/Delete -----
   const handleActivityEdit = (activity: Activity) => {
     setActivityEditId(activity.id);
@@ -643,6 +910,7 @@ export default function Dashboard() {
             description: blogDescription,
             excerpt: blogExcerpt,
             link: blogLink,
+            image: blogImage,
           },
           { merge: true }
         );
@@ -654,6 +922,7 @@ export default function Dashboard() {
           description: blogDescription,
           excerpt: blogExcerpt,
           link: blogLink,
+          image: blogImage,
         });
         alert("Blog added.");
       }
@@ -661,6 +930,7 @@ export default function Dashboard() {
       setBlogDescription("");
       setBlogExcerpt("");
       setBlogLink("");
+      setBlogImage("");
       fetchBlogs();
     } catch (err) {
       console.error("Blog save failed:", err);
@@ -678,12 +948,14 @@ export default function Dashboard() {
           description?: string;
           excerpt?: string;
           link?: string;
+          image?: string;
         };
         setBlogEditId(blog.id);
         setBlogTitle(data.title || "");
         setBlogDescription(data.description || "");
         setBlogExcerpt(data.excerpt || "");
         setBlogLink(data.link || "");
+        setBlogImage(data.image || "");
         setActiveSection("blogs");
         document
           .getElementById("blogs")
@@ -724,6 +996,65 @@ export default function Dashboard() {
       console.error("Failed to update blogsTitle:", err);
       alert("Failed to update Blogs Section Title. See console.");
     }
+  };
+
+  // ----- University Add/Update -----
+  const handleUniversitySubmit = async () => {
+    if (!universityName.trim()) {
+      return alert("Please enter university name");
+    }
+
+    try {
+      if (universityEditId) {
+        const docRef = doc(db, "universities", universityEditId);
+        await updateDoc(docRef, {
+          name: universityName,
+          image: universityImage,
+        });
+        setUniversityEditId(null);
+        alert("University updated!");
+      } else {
+        await addDoc(collection(db, "universities"), {
+          name: universityName,
+          image: universityImage,
+        });
+        alert("University added!");
+      }
+      setUniversityName("");
+      setUniversityImage("");
+      fetchUniversities();
+    } catch (error) {
+      console.error("Error saving university:", error);
+      alert("Failed to save university");
+    }
+  };
+
+  // ----- University Edit/Delete -----
+  const handleUniversityEdit = (university: University) => {
+    setUniversityEditId(university.id);
+    setUniversityName(university.name);
+    setUniversityImage(university.image || "");
+  };
+
+  const handleUniversityDelete = async (id: string) => {
+    const confirmed = confirm("Are you sure to delete this university?");
+    if (!confirmed) return;
+
+    try {
+      await deleteDoc(doc(db, "universities", id));
+      fetchUniversities();
+      alert("University deleted successfully!");
+    } catch (error) {
+      console.error("Error deleting university:", error);
+      alert("Failed to delete university");
+    }
+  };
+
+  // ----- Cancel University Edit -----
+  const handleUniversityCancel = () => {
+    setUniversityEditId(null);
+    setUniversityName("");
+    setUniversityImage("");
   };
 
   // ---------- JSX ----------
@@ -838,6 +1169,16 @@ export default function Dashboard() {
                   >
                     Blogs
                   </button>
+                  <button
+                    onClick={() => {
+                      setActiveSection("universities");
+                      setSidebarOpen(false);
+                      setHomeDropdownOpen(false);
+                    }}
+                    className="hover:bg-[#69959e] rounded px-3 py-2 transition text-left"
+                  >
+                    Universities
+                  </button>
                 </div>
               )}
             </div>
@@ -927,6 +1268,15 @@ export default function Dashboard() {
                   className="hover:bg-[#69959e] rounded px-3 py-2 transition text-left"
                 >
                   Blogs
+                </button>
+                <button
+                  onClick={() => {
+                    setActiveSection("universities");
+                    setHomeDropdownOpen(false);
+                  }}
+                  className="hover:bg-[#69959e] rounded px-3 py-2 transition text-left"
+                >
+                  Universities
                 </button>
               </div>
             )}
@@ -1056,8 +1406,6 @@ export default function Dashboard() {
               className="bg-[#5b8a76] p-6 rounded shadow"
             >
               <h2 className="text-2xl font-bold mb-4">Manage Categories</h2>
-
-              {/* Category Form */}
               <div className="mb-6 space-y-2 bg-[#69959e] p-4 rounded">
                 <h3 className="text-lg font-bold mb-2">
                   {categoryEditId ? "Edit Category" : "Add New Category"}
@@ -1110,8 +1458,6 @@ export default function Dashboard() {
                   )}
                 </div>
               </div>
-
-              {/* Categories List */}
               <div className="space-y-2">
                 <h3 className="text-lg font-bold mb-2">Categories List</h3>
                 {categoryTree.length === 0 ? (
@@ -1215,18 +1561,67 @@ export default function Dashboard() {
                   rows={3}
                   className="w-full p-2 text-gray-800 rounded border border-white"
                 />
+                <div className="border border-white rounded p-3 bg-[#69959e]">
+                  <label className="block text-sm font-medium mb-2">
+                    Activity Image
+                  </label>
+                  {activityImage && (
+                    <div className="mb-3">
+                      <p className="text-sm mb-1">Current Image:</p>
+                      <Image
+                        src={activityImage}
+                        alt="Preview"
+                        width={128}
+                        height={80}
+                        className="w-32 h-20 object-cover rounded border border-white"
+                      />
+                    </div>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) =>
+                      setActivityImageUpload(e.target.files?.[0] || null)
+                    }
+                    className="w-full p-2 text-gray-800 rounded border border-white mb-2"
+                  />
+                  {isActivityUploading && (
+                    <div className="w-full bg-gray-200 rounded-full h-2.5 mb-2">
+                      <div
+                        className="bg-[#5b8a76] h-2.5 rounded-full"
+                        style={{ width: `${activityUploadProgress}%` }}
+                      ></div>
+                      <p className="text-xs text-center">
+                        {activityUploadProgress}%
+                      </p>
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={handleActivityImageUpload}
+                    disabled={!activityImageUpload || isActivityUploading}
+                    className="w-full px-4 py-2 bg-[#5b8a76] rounded hover:bg-[#4a7563] transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isActivityUploading
+                      ? "Uploading..."
+                      : "Upload Image to Supabase"}
+                  </button>
+                  <div className="mt-2">
+                    <p className="text-sm text-center mb-1">- OR -</p>
+                    <input
+                      type="text"
+                      placeholder="Or enter image URL directly"
+                      value={activityImage}
+                      onChange={(e) => setActivityImage(e.target.value)}
+                      className="w-full p-2 text-gray-800 rounded border border-white"
+                    />
+                  </div>
+                </div>
                 <input
                   type="text"
                   placeholder="Link (optional)"
                   value={activityLink}
                   onChange={(e) => setActivityLink(e.target.value)}
-                  className="w-full p-2 text-gray-800 rounded border border-white"
-                />
-                <input
-                  type="text"
-                  placeholder="Image URL (optional)"
-                  value={activityImage}
-                  onChange={(e) => setActivityImage(e.target.value)}
                   className="w-full p-2 text-gray-800 rounded border border-white"
                 />
                 <select
@@ -1253,7 +1648,6 @@ export default function Dashboard() {
                     : "Add Activity"}
                 </button>
               </div>
-
               <div className="grid gap-4">
                 {activities.map((activity) => {
                   const category = categories.find(
@@ -1265,12 +1659,13 @@ export default function Dashboard() {
                       className="p-4 bg-[#69959e] rounded flex justify-between items-center"
                     >
                       <div className="flex-1">
-                        {/* Activity Image Preview */}
                         {activity.image && (
                           <div className="mb-3">
-                            <img
+                            <Image
                               src={activity.image}
                               alt={activity.title}
+                              width={128}
+                              height={80}
                               className="w-32 h-20 object-cover rounded"
                             />
                           </div>
@@ -1326,6 +1721,62 @@ export default function Dashboard() {
           {activeSection === "aboutus" && (
             <section id="Aboutus" className="bg-[#5b8a76] p-6 rounded shadow">
               <h2 className="text-2xl font-bold mb-4">Edit Aboutus Section</h2>
+              <div className="border border-white rounded p-3 bg-[#69959e] mb-4">
+                <label className="block text-sm font-medium mb-2">
+                  About Us Image
+                </label>
+                {AboutusImage && (
+                  <div className="mb-3">
+                    <p className="text-sm mb-1">Current Image:</p>
+                    <Image
+                      src={AboutusImage}
+                      alt="Preview"
+                      width={128}
+                      height={80}
+                      className="w-32 h-20 object-cover rounded border border-white"
+                    />
+                  </div>
+                )}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) =>
+                    setAboutusImageUpload(e.target.files?.[0] || null)
+                  }
+                  className="w-full p-2 text-gray-800 rounded border border-white mb-2"
+                />
+                {isAboutusUploading && (
+                  <div className="w-full bg-gray-200 rounded-full h-2.5 mb-2">
+                    <div
+                      className="bg-[#5b8a76] h-2.5 rounded-full"
+                      style={{ width: `${AboutusUploadProgress}%` }}
+                    ></div>
+                    <p className="text-xs text-center">
+                      {AboutusUploadProgress}%
+                    </p>
+                  </div>
+                )}
+                <button
+                  type="button"
+                  onClick={handleAboutusImageUpload}
+                  disabled={!AboutusImageUpload || isAboutusUploading}
+                  className="w-full px-4 py-2 bg-[#5b8a76] rounded hover:bg-[#4a7563] transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isAboutusUploading
+                    ? "Uploading..."
+                    : "Upload Image to Supabase"}
+                </button>
+                <div className="mt-2">
+                  <p className="text-sm text-center mb-1">- OR -</p>
+                  <input
+                    type="text"
+                    placeholder="Or enter image URL directly"
+                    value={AboutusImage}
+                    onChange={(e) => setAboutusImage(e.target.value)}
+                    className="w-full p-2 text-gray-800 rounded border border-white"
+                  />
+                </div>
+              </div>
               <input
                 type="text"
                 placeholder="Title"
@@ -1376,7 +1827,6 @@ export default function Dashboard() {
                   Update Section Title
                 </button>
               </div>
-
               <div className="mb-6 space-y-2">
                 <input
                   type="text"
@@ -1406,6 +1856,62 @@ export default function Dashboard() {
                   onChange={(e) => setBlogLink(e.target.value)}
                   className="w-full p-2 text-gray-800 rounded border border-white"
                 />
+                <div className="border border-white rounded p-3 bg-[#69959e]">
+                  <label className="block text-sm font-medium mb-2">
+                    Blog Image
+                  </label>
+                  {blogImage && (
+                    <div className="mb-3">
+                      <p className="text-sm mb-1">Current Image:</p>
+                      <Image
+                        src={blogImage}
+                        alt="Preview"
+                        width={128}
+                        height={80}
+                        className="w-32 h-20 object-cover rounded border border-white"
+                      />
+                    </div>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) =>
+                      setBlogImageUpload(e.target.files?.[0] || null)
+                    }
+                    className="w-full p-2 text-gray-800 rounded border border-white mb-2"
+                  />
+                  {isBlogUploading && (
+                    <div className="w-full bg-gray-200 rounded-full h-2.5 mb-2">
+                      <div
+                        className="bg-[#5b8a76] h-2.5 rounded-full"
+                        style={{ width: `${blogUploadProgress}%` }}
+                      ></div>
+                      <p className="text-xs text-center">
+                        {blogUploadProgress}%
+                      </p>
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={handleBlogImageUpload}
+                    disabled={!blogImageUpload || isBlogUploading}
+                    className="w-full px-4 py-2 bg-[#5b8a76] rounded hover:bg-[#4a7563] transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isBlogUploading
+                      ? "Uploading..."
+                      : "Upload Image to Supabase"}
+                  </button>
+                  <div className="mt-2">
+                    <p className="text-sm text-center mb-1">- OR -</p>
+                    <input
+                      type="text"
+                      placeholder="Or enter image URL directly"
+                      value={blogImage}
+                      onChange={(e) => setBlogImage(e.target.value)}
+                      className="w-full p-2 text-gray-800 rounded border border-white"
+                    />
+                  </div>
+                </div>
                 <button
                   onClick={handleBlogSubmit}
                   className="px-4 py-2 bg-[#69959e] rounded hover:bg-[#69959e] transition"
@@ -1413,7 +1919,6 @@ export default function Dashboard() {
                   {blogEditId ? "Update Blog" : "Add Blog"}
                 </button>
               </div>
-
               <div className="grid gap-4">
                 {blogs.map((blog) => (
                   <div
@@ -1425,6 +1930,17 @@ export default function Dashboard() {
                       <p className="text-sm">
                         {blog.excerpt ?? blog.description}
                       </p>
+                      {blog.image && (
+                        <div className="mt-2">
+                          <Image
+                            src={blog.image}
+                            alt={blog.title}
+                            width={128}
+                            height={80}
+                            className="w-32 h-20 object-cover rounded"
+                          />
+                        </div>
+                      )}
                       {blog.link && (
                         <a
                           href={blog.link}
@@ -1450,6 +1966,150 @@ export default function Dashboard() {
                     </div>
                   </div>
                 ))}
+              </div>
+            </section>
+          )}
+
+          {/* Universities Section */}
+          {activeSection === "universities" && (
+            <section
+              id="universities"
+              className="bg-[#5b8a76] p-6 rounded shadow"
+            >
+              <h2 className="text-2xl font-bold mb-4">Manage Universities</h2>
+              <div className="mb-6 space-y-2 bg-[#69959e] p-4 rounded">
+                <h3 className="text-lg font-bold mb-2">
+                  {universityEditId ? "Edit University" : "Add New University"}
+                </h3>
+                <input
+                  type="text"
+                  placeholder="University Name *"
+                  value={universityName}
+                  onChange={(e) => setUniversityName(e.target.value)}
+                  className="w-full p-2 text-gray-800 rounded border border-white"
+                />
+                <div className="border border-white rounded p-3 bg-[#5b8a76] mt-2">
+                  <label className="block text-sm font-medium mb-2">
+                    University Logo
+                  </label>
+                  {universityImage && (
+                    <div className="mb-3">
+                      <p className="text-sm mb-1">Current Logo:</p>
+                      <Image
+                        src={universityImage}
+                        alt="Preview"
+                        width={128}
+                        height={80}
+                        className="w-32 h-20 object-contain rounded border border-white bg-white p-2"
+                      />
+                    </div>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) =>
+                      setUniversityImageUpload(e.target.files?.[0] || null)
+                    }
+                    className="w-full p-2 text-gray-800 rounded border border-white mb-2"
+                  />
+                  {isUniversityUploading && (
+                    <div className="w-full bg-gray-200 rounded-full h-2.5 mb-2">
+                      <div
+                        className="bg-[#5b8a76] h-2.5 rounded-full"
+                        style={{ width: `${universityUploadProgress}%` }}
+                      ></div>
+                      <p className="text-xs text-center">
+                        {universityUploadProgress}%
+                      </p>
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={handleUniversityImageUpload}
+                    disabled={!universityImageUpload || isUniversityUploading}
+                    className="w-full px-4 py-2 bg-[#4a7563] rounded hover:bg-[#3a5f4d] transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isUniversityUploading
+                      ? "Uploading..."
+                      : "Upload Logo to Supabase"}
+                  </button>
+                  <div className="mt-2">
+                    <p className="text-sm text-center mb-1">- OR -</p>
+                    <input
+                      type="text"
+                      placeholder="Or enter image URL directly"
+                      value={universityImage}
+                      onChange={(e) => setUniversityImage(e.target.value)}
+                      className="w-full p-2 text-gray-800 rounded border border-white"
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleUniversitySubmit}
+                    disabled={!universityName.trim()}
+                    className="px-4 py-2 bg-[#5b8a76] rounded hover:bg-[#4a7563] transition disabled:opacity-50"
+                  >
+                    {universityEditId ? "Update University" : "Add University"}
+                  </button>
+                  {universityEditId && (
+                    <button
+                      onClick={handleUniversityCancel}
+                      className="px-4 py-2 bg-gray-500 rounded hover:bg-gray-400 transition"
+                    >
+                      Cancel
+                    </button>
+                  )}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-lg font-bold mb-2">Universities List</h3>
+                {universities.length === 0 ? (
+                  <p className="text-center py-4">
+                    No universities yet. Add your first university above.
+                  </p>
+                ) : (
+                  universities.map((university) => (
+                    <div
+                      key={university.id}
+                      className="p-4 bg-[#69959e] rounded flex justify-between items-center"
+                    >
+                      <div className="flex items-center gap-4">
+                        {university.image && (
+                          <Image
+                            src={university.image}
+                            alt={university.name}
+                            width={64}
+                            height={48}
+                            className="w-16 h-12 object-contain bg-white rounded border border-white p-1"
+                          />
+                        )}
+                        <div>
+                          <h3 className="font-bold">{university.name}</h3>
+                          {university.image && (
+                            <span className="text-xs text-gray-200">
+                              Has logo
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleUniversityEdit(university)}
+                          className="px-3 py-1 bg-yellow-500 rounded hover:bg-yellow-400 transition"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleUniversityDelete(university.id)}
+                          className="px-3 py-1 bg-red-600 rounded hover:bg-red-500 transition"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </section>
           )}

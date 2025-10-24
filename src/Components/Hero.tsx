@@ -52,7 +52,7 @@ export default function Hero() {
           )}
         </h1>
 
-        <p className="text-lg sm:text-xl lg:text-2xl text-gray-600 mb-8 sm:mb-10 max-w-2xl mx-auto leading-relaxed px-2">
+        <p className="text-sm sm:text-xl lg:text-2xl text-gray-600 mb-8 sm:mb-10 max-w-2xl mx-auto leading-relaxed px-2">
           {heroData?.description}
         </p>
       </div>
@@ -66,11 +66,11 @@ export default function Hero() {
               placeholder="Search for extracurriculars..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="flex-1 bg-transparent outline-none px-2 py-2 sm:py-3 text-base sm:text-lg w-full text-center sm:text-left"
+              className="flex-1 bg-transparent outline-none px-2 py-2 sm:py-3 text-base sm:text-lg w-full text-center sm:text-left text-[#020d2b]"
             />
             <button
               type="submit"
-              className="w-full sm:w-auto px-6 py-3 rounded-xl sm:rounded-full bg-[#020d2b] text-white font-semibold shadow hover:bg-[#69959e] transition text-base sm:text-lg whitespace-nowrap"
+              className="w-full sm:w-auto px-6 py-3 rounded-xl sm:rounded-full bg-gradient-to-br from-[#020d2b] to-[#1b7a49] text-white font-semibold shadow hover:bg-[#69959e] transition text-base sm:text-lg whitespace-nowrap"
             >
               Search
             </button>

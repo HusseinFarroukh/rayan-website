@@ -9,8 +9,9 @@ interface Blog {
   id: string;
   title: string;
   excerpt: string;
-  description?: string; // Add full description field
+  description?: string;
   link?: string;
+  image?: string; // Add image field
 }
 
 export default function Blogs() {
@@ -27,7 +28,11 @@ export default function Blogs() {
     const unsubscribeBlogs = onSnapshot(collection(db, "blogs"), (snapshot) => {
       const data = snapshot.docs
         .filter((d) => d.id !== "blogsTitle")
-        .map((d) => ({ ...(d.data() as Blog), id: d.id }));
+        .map((d) => ({
+          ...(d.data() as Blog),
+          id: d.id,
+          image: d.data().image || "", // Ensure image field is included
+        }));
       setBlogs(data);
     });
 
@@ -68,6 +73,14 @@ export default function Blogs() {
     "/blog5.jpg",
     "/blog6.jpg",
   ];
+
+  // Get image source - use uploaded image if available, otherwise fallback to static image
+  const getImageSrc = (blog: Blog, index: number) => {
+    if (blog.image) {
+      return blog.image; // Use the uploaded image from Supabase
+    }
+    return staticImages[index % staticImages.length]; // Fallback to static image
+  };
 
   // Handle read more click
   const handleReadMore = (blog: Blog) => {
@@ -119,11 +132,16 @@ export default function Blogs() {
                   className="inline-flex flex-col items-center justify-start bg-gray-50 rounded-xl sm:rounded-2xl shadow p-4 sm:p-6 min-w-[260px] sm:min-w-[280px] lg:min-w-[300px] flex-shrink-0"
                 >
                   <Image
-                    src={staticImages[idx % staticImages.length]}
+                    src={getImageSrc(post, idx)}
                     alt={post.title}
                     width={320}
                     height={180}
                     className="rounded-lg sm:rounded-xl object-cover mb-3 sm:mb-4 w-full h-32 sm:h-36 lg:h-44"
+                    onError={(e) => {
+                      // If uploaded image fails to load, fallback to static image
+                      const target = e.target as HTMLImageElement;
+                      target.src = staticImages[idx % staticImages.length];
+                    }}
                   />
                   <h3 className="text-lg sm:text-xl font-bold mb-2 text-center text-[#020d2b] line-clamp-2">
                     {post.title}
@@ -155,11 +173,16 @@ export default function Blogs() {
                 className="bg-gray-50 rounded-xl sm:rounded-2xl shadow hover:shadow-lg transition p-4 sm:p-6 flex flex-col items-center"
               >
                 <Image
-                  src={staticImages[idx % staticImages.length]}
+                  src={getImageSrc(post, idx)}
                   alt={post.title}
                   width={320}
                   height={180}
                   className="rounded-lg sm:rounded-xl object-cover mb-3 sm:mb-4 w-full h-32 sm:h-36 lg:h-44"
+                  onError={(e) => {
+                    // If uploaded image fails to load, fallback to static image
+                    const target = e.target as HTMLImageElement;
+                    target.src = staticImages[idx % staticImages.length];
+                  }}
                 />
                 <h3 className="text-lg sm:text-xl font-bold mb-2 text-center text-[#020d2b] line-clamp-2">
                   {post.title}
@@ -210,6 +233,24 @@ export default function Blogs() {
 
               {/* Blog Content */}
               <div className="pt-6 sm:pt-8">
+                {/* Show blog image in modal if available */}
+                {selectedBlog.image && (
+                  <div className="mb-6">
+                    <Image
+                      src={selectedBlog.image}
+                      alt={selectedBlog.title}
+                      width={600}
+                      height={300}
+                      className="rounded-lg sm:rounded-xl object-cover w-full h-48 sm:h-56 lg:h-64"
+                      onError={(e) => {
+                        // Hide the image if it fails to load
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = "none";
+                      }}
+                    />
+                  </div>
+                )}
+
                 <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-[#020d2b] mb-4 sm:mb-6 text-center">
                   {selectedBlog.title}
                 </h2>

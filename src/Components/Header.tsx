@@ -1,12 +1,14 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { getAuth, onAuthStateChanged, signOut, User } from "firebase/auth";
 import { app } from "@/lib/firebase";
 import Image from "next/image";
+import Link from "next/link";
 
 export default function Header() {
   const router = useRouter();
+  const pathname = usePathname();
   const auth = getAuth(app);
 
   const [menuOpen, setMenuOpen] = useState(false);
@@ -25,11 +27,26 @@ export default function Header() {
     router.push("/");
   };
 
+  const handleActivitiesClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (user) {
+      // User is logged in, go to activities page
+      router.push("/activities");
+    } else {
+      // User is not logged in, go to login page
+      router.push("/auth");
+    }
+    setMenuOpen(false);
+  };
+
   const username = user?.displayName
     ? user.displayName
     : user?.email
     ? user.email.split("@")[0]
     : "";
+
+  // Check if current path is activities page
+  const isActivitiesPage = pathname === "/activities";
 
   return (
     <header className="w-full flex justify-center mt-4 sm:mt-6 px-3 sm:px-4">
@@ -41,7 +58,7 @@ export default function Header() {
             alt="Logo"
             width={100}
             height={50}
-            className="object-contain w-24  h-6 sm:w-28 h-7 md:w-32 h-8 lg:w-50 h-10"
+            className="object-contain w-[150px]  h-[55px] sm:w-[100px] sm:h-[50px]  md:w-32 lg:w-50 "
             priority
           />
         </div>
@@ -49,20 +66,29 @@ export default function Header() {
         {/* Desktop Navigation */}
         <ul className="hidden sm:flex flex-1 items-center gap-4 lg:gap-6 justify-center">
           <li>
-            <a
-              className="px-4 py-2 rounded-lg font-medium bg-[#020d2b] text-white hover:bg-[#1a2d4d] transition text-sm lg:text-base"
-              href="#"
+            <Link
+              className={`px-4 py-2 rounded-lg font-medium transition text-sm lg:text-base ${
+                !isActivitiesPage
+                  ? "bg-gradient-to-br from-[#1b7a49] to-[#020d2b] text-white hover:bg-[#1a2d4d]"
+                  : "text-[#020d2b] hover:bg-[#020d2b] hover:text-white"
+              }`}
+              href="/"
             >
               Home
-            </a>
+            </Link>
           </li>
+          {/* Activities Dashboard - redirects to login if not authenticated */}
           <li>
-            <a
-              className="px-4 py-2 rounded-lg font-medium text-[#020d2b] hover:bg-gray-100 transition text-sm lg:text-base"
-              href="/activities"
+            <button
+              onClick={handleActivitiesClick}
+              className={`px-4 py-2 rounded-lg font-medium transition text-sm lg:text-base ${
+                isActivitiesPage
+                  ? "bg-gradient-to-br from-[#020d2b] to-[#1b7a49] text-white hover:bg-[#1a2d4d]"
+                  : "text-[#020d2b] hover:bg-[#020d2b] hover:text-white"
+              }`}
             >
               Activities Dashboard
-            </a>
+            </button>
           </li>
         </ul>
 
@@ -75,18 +101,18 @@ export default function Header() {
               </span>
               <button
                 onClick={handleSignOut}
-                className="px-4 py-2 rounded-full bg-red-500 text-white font-semibold shadow hover:bg-red-400 transition text-sm lg:text-base whitespace-nowrap"
+                className="px-4 py-2 rounded-full bg-gradient-to-br from-[#020d2b] to-[#1b7a49] hover:from-[#1b7a49]  hover:to-[#020d2b] hover:transition-all hover:duration-500 hover:ease-in-out text-white font-semibold shadow    transition text-sm lg:text-base whitespace-nowrap"
               >
                 Sign Out
               </button>
             </>
           ) : (
-            <a
+            <Link
               className="px-5 py-2.5 rounded-full bg-[#020d2b] text-white font-semibold shadow hover:bg-[#69959e] transition text-sm lg:text-base whitespace-nowrap"
               href="/auth"
             >
               Sign In
-            </a>
+            </Link>
           )}
         </div>
 
@@ -132,20 +158,28 @@ export default function Header() {
             {/* Mobile Menu */}
             <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-xl z-50 flex flex-col items-stretch gap-3 py-4 px-4 sm:hidden border border-gray-200">
               {/* Mobile Navigation Links */}
-              <a
-                className="px-4 py-3 rounded-xl font-medium bg-[#020d2b] text-white text-center text-base"
-                href="#"
+              <Link
+                className={`px-4 py-3 rounded-xl font-medium text-center text-base ${
+                  !isActivitiesPage
+                    ? "bg-gradient-to-br from-[#020d2b] to-[#1b7a49] text-white"
+                    : "text-[#020d2b] border border-gray-200 hover:bg-gray-100"
+                }`}
+                href="/"
                 onClick={() => setMenuOpen(false)}
               >
                 Home
-              </a>
-              <a
-                className="px-4 py-3 rounded-xl font-medium text-[#020d2b] hover:bg-gray-100 text-center text-base border border-gray-200"
-                href="/activities"
-                onClick={() => setMenuOpen(false)}
+              </Link>
+              {/* Activities Dashboard - redirects to login if not authenticated */}
+              <button
+                onClick={handleActivitiesClick}
+                className={`px-4 py-3 rounded-xl font-medium text-center text-base ${
+                  isActivitiesPage
+                    ? "bg-gradient-to-br from-[#020d2b] to-[#1b7a49] text-white"
+                    : "text-[#020d2b] border border-gray-200 hover:bg-gray-100"
+                }`}
               >
                 Activities Dashboard
-              </a>
+              </button>
 
               {/* Mobile User Section - Stacked with smaller text */}
               <div className="border-t border-gray-200 pt-3 mt-1">
@@ -158,19 +192,19 @@ export default function Header() {
                     {/* Sign Out with smaller text */}
                     <button
                       onClick={handleSignOut}
-                      className="px-3 py-2 rounded-lg bg-red-500 text-white font-semibold shadow hover:bg-red-400 transition text-sm"
+                      className="px-3 py-2 rounded-lg bg-gradient-to-br from-[#020d2b] to-[#1b7a49] text-white font-semibold shadow hover:bg-red-400 transition text-sm"
                     >
                       Sign Out
                     </button>
                   </div>
                 ) : (
-                  <a
+                  <Link
                     className="px-4 py-3 rounded-xl bg-[#020d2b] text-white font-semibold shadow hover:bg-[#69959e] transition text-center text-base block"
                     href="/auth"
                     onClick={() => setMenuOpen(false)}
                   >
                     Sign In
-                  </a>
+                  </Link>
                 )}
               </div>
             </div>

@@ -6,6 +6,7 @@ import { db } from "@/lib/firebase";
 import Header from "@/Components/Header";
 import Footer from "@/Components/Footer";
 import { useSearchParams } from "next/navigation";
+import Image from "next/image";
 
 interface Activity {
   id: string;
@@ -22,6 +23,11 @@ interface Category {
   name: string;
   parentId?: string;
   description?: string;
+}
+
+interface CategoryNode extends Category {
+  level: number;
+  children: CategoryNode[];
 }
 
 export default function ActivitiesPage() {
@@ -99,11 +105,8 @@ export default function ActivitiesPage() {
   const buildCategoryTree = (
     categories: Category[]
   ): (Category & { level: number })[] => {
-    const categoryMap = new Map();
-    const rootCategories: (Category & {
-      level: number;
-      children: Category[];
-    })[] = [];
+    const categoryMap = new Map<string, CategoryNode>();
+    const rootCategories: CategoryNode[] = [];
 
     // Initialize all categories with level and children
     categories.forEach((category) => {
@@ -117,6 +120,8 @@ export default function ActivitiesPage() {
     // Build the tree structure
     categories.forEach((category) => {
       const categoryNode = categoryMap.get(category.id);
+      if (!categoryNode) return;
+
       if (category.parentId) {
         const parent = categoryMap.get(category.parentId);
         if (parent) {
@@ -133,9 +138,9 @@ export default function ActivitiesPage() {
 
     // Flatten the tree for display
     const flattenTree = (
-      nodes: (Category & { level: number; children: Category[] })[],
+      nodes: CategoryNode[],
       result: (Category & { level: number })[] = []
-    ) => {
+    ): (Category & { level: number })[] => {
       nodes.forEach((node) => {
         // Create a new object without children property
         const { children, ...nodeData } = node;
@@ -218,7 +223,7 @@ export default function ActivitiesPage() {
                     placeholder="Search activities..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full p-2 sm:p-3 pl-9 sm:pl-10 pr-8 border border-gray-300 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-[#020d2b] focus:border-transparent text-sm sm:text-base"
+                    className="w-full p-2 text-[#020d2b] sm:p-3 pl-9 sm:pl-10 pr-8 border border-gray-300 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-[#020d2b] focus:border-transparent text-sm sm:text-base"
                   />
                   <div className="absolute inset-y-0 left-0 pl-2 sm:pl-3 flex items-center pointer-events-none">
                     <svg
@@ -263,7 +268,7 @@ export default function ActivitiesPage() {
                 <select
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="w-full p-2 sm:p-3 border border-gray-300 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-[#020d2b] focus:border-transparent bg-white text-sm sm:text-base"
+                  className="w-full p-3 sm:p-3 border border-gray-300 text-[#020d2b] rounded-lg sm:rounded-xl focus:ring-2 focus:ring-[#020d2b] focus:border-transparent bg-white text-sm sm:text-base"
                 >
                   <option value="all">All Categories</option>
                   {categoryTree.map((category) => (
@@ -359,11 +364,13 @@ export default function ActivitiesPage() {
                     >
                       {/* Activity Image */}
                       {activity.image ? (
-                        <div className="h-32 sm:h-40 lg:h-48 overflow-hidden">
-                          <img
+                        <div className="h-32 sm:h-40 lg:h-48 overflow-hidden relative">
+                          <Image
                             src={activity.image}
                             alt={activity.title}
-                            className="w-full h-full object-cover transition-transform hover:scale-105"
+                            fill
+                            className="object-cover transition-transform hover:scale-105"
+                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                           />
                         </div>
                       ) : (
@@ -400,7 +407,8 @@ export default function ActivitiesPage() {
                         {/* Category Display */}
                         {categoryName && (
                           <div className="mb-3 sm:mb-4 text-center">
-                            <span className="inline-block bg-[#020d2b] text-white px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium">
+                            <span className="inline-flex items-center text-black px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium">
+                              <span className="w-2 h-2 bg-red-500 rounded-full mr-2"></span>
                               {categoryName}
                             </span>
                           </div>
@@ -409,7 +417,7 @@ export default function ActivitiesPage() {
                         {/* Read More Button */}
                         <button
                           onClick={() => openModal(activity)}
-                          className="bg-[#020d2b] text-white px-3 sm:px-4 py-2 rounded-lg sm:rounded-xl hover:bg-gray-800 transition mt-auto text-sm sm:text-base w-full"
+                          className="bg-gradient-to-br from-[#020d2b] to-[#1b7a49] hover:from-[#1b7a49] hover:to-[#020d2b] text-white px-3 sm:px-4 py-2 rounded-lg sm:rounded-xl transition mt-auto text-sm sm:text-base w-full"
                         >
                           Read More
                         </button>
@@ -426,70 +434,56 @@ export default function ActivitiesPage() {
       {/* Modal */}
       {selectedActivity && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-3 sm:p-4"
+          className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center z-50 p-3 sm:p-4"
           onClick={closeModal}
         >
           <div
-            className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 max-w-2xl w-full mx-auto max-h-[90vh] overflow-y-auto"
+            className="bg-white rounded-2xl p-6 max-w-2xl w-full mx-4 relative"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Close Button */}
             <button
               onClick={closeModal}
-              className="absolute top-2 right-2 sm:top-4 sm:right-4 text-gray-500 hover:text-gray-800 font-bold text-xl sm:text-2xl z-10 bg-white rounded-full w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center shadow-sm"
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-800 font-bold text-xl"
             >
               &times;
             </button>
 
             {/* Modal Image */}
             {selectedActivity.image && (
-              <div className="mb-3 sm:mb-4 rounded-lg overflow-hidden">
-                <img
+              <div className="mb-4 rounded-lg overflow-hidden relative h-64">
+                <Image
                   src={selectedActivity.image}
                   alt={selectedActivity.title}
-                  className="w-full h-40 sm:h-48 lg:h-56 object-cover"
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 768px) 90vw, 600px"
                 />
               </div>
             )}
 
-            <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-3 sm:mb-4 text-[#020d2b] pr-6">
+            <h3 className="text-2xl font-bold mb-4 text-black">
               {selectedActivity.title}
             </h3>
 
             {/* Category in Modal */}
             {selectedActivity.category && (
-              <div className="mb-3 sm:mb-4">
-                <span className="inline-block bg-[#020d2b] text-white px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium">
+              <div className="mb-3">
+                <span className="inline-flex items-center text-black px-3 py-1 rounded-full text-sm font-medium">
+                  <span className="w-2 h-2 bg-red-500 rounded-full mr-2"></span>
                   {getCategoryName(selectedActivity.category)}
                 </span>
               </div>
             )}
 
-            <p className="text-gray-700 mb-4 sm:mb-6 text-sm sm:text-base leading-relaxed">
-              {selectedActivity.description}
-            </p>
-
+            <p className="text-gray-700 mb-4">{selectedActivity.description}</p>
             {selectedActivity.link && (
               <a
                 href={selectedActivity.link}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center text-[#020d2b] font-medium hover:underline text-sm sm:text-base"
+                className="mt-4 inline-block text-[#020d2b] font-medium hover:underline"
               >
-                Visit Link
-                <svg
-                  className="ml-1 w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                  />
-                </svg>
+                Visit Link →
               </a>
             )}
           </div>
