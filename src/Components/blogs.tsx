@@ -151,7 +151,7 @@ export default function Blogs() {
                   </p>
                   <button
                     onClick={() => handleReadMore(post)}
-                    className="bg-[#020d2b] text-white font-semibold px-3 sm:px-4 py-2 rounded-lg sm:rounded-xl shadow hover:bg-blue-300 transition text-sm sm:text-base w-full sm:w-auto"
+                    className="bg-gradient-to-br from-[#020d2b] to-[#1b7a49] hover:from-[#1b7a49] hover:to-[#020d2b] text-white font-semibold px-3 sm:px-4 py-2 rounded-lg sm:rounded-xl shadow hover:bg-blue-300 transition text-sm sm:text-base w-full sm:w-auto"
                   >
                     Read More →
                   </button>
@@ -192,7 +192,7 @@ export default function Blogs() {
                 </p>
                 <button
                   onClick={() => handleReadMore(post)}
-                  className="bg-[#020d2b] text-white font-semibold px-4 sm:px-6 py-2 rounded-lg sm:rounded-xl shadow hover:bg-blue-300 transition text-sm sm:text-base w-full sm:w-auto"
+                  className="bg-gradient-to-br from-[#020d2b] to-[#1b7a49] hover:from-[#1b7a49] hover:to-[#020d2b] text-white font-semibold px-4 sm:px-6 py-2 rounded-lg sm:rounded-xl shadow hover:bg-blue-300 transition text-sm sm:text-base w-full sm:w-auto"
                 >
                   Read More →
                 </button>

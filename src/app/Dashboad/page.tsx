@@ -80,8 +80,105 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-// ----------- Component -----------
+// ----------- Admin Credentials (Hardcoded) -----------
+const ADMIN_CREDENTIALS = {
+  email: "admin@eduguide.com",
+  password: "Admin123!", // You can change this password
+};
+
+// ----------- Login Component -----------
+function Login({ onLoginSuccess }: { onLoginSuccess: () => void }) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    // Check against hardcoded admin credentials
+    if (
+      email === ADMIN_CREDENTIALS.email &&
+      password === ADMIN_CREDENTIALS.password
+    ) {
+      // Store authentication in localStorage
+      localStorage.setItem("adminAuthenticated", "true");
+      localStorage.setItem("adminEmail", email);
+      onLoginSuccess();
+    } else {
+      setError("Invalid admin credentials");
+    }
+
+    setLoading(false);
+  };
+
+  return (
+    <div className="min-h-screen bg-[#f4eff1] flex items-center justify-center p-4">
+      <div className="bg-[#5b8a76] p-8 rounded-lg shadow-lg max-w-md w-full">
+        <h2 className="text-2xl font-bold text-white mb-2 text-center">
+          Admin Dashboard
+        </h2>
+        <p className="text-gray-200 text-center mb-6 text-sm">
+          Restricted Access - Admin Only
+        </p>
+
+        <form onSubmit={handleLogin} className="space-y-4">
+          {error && (
+            <div className="bg-red-500 text-white p-3 rounded text-sm">
+              {error}
+            </div>
+          )}
+
+          <div>
+            <label className="block text-white text-sm font-medium mb-2">
+              Admin Email
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full p-3 rounded border border-gray-300 text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#69959e]"
+              placeholder="Enter admin email"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-white text-sm font-medium mb-2">
+              Password
+            </label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full p-3 rounded border border-gray-300 text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#69959e]"
+              placeholder="Enter admin password"
+              required
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-[#69959e] text-white py-3 px-4 rounded hover:bg-[#5a7a6e] transition disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? "Authenticating..." : "Login as Admin"}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ----------- Main Dashboard Component -----------
 export default function Dashboard() {
+  // ----- Authentication State -----
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [adminEmail, setAdminEmail] = useState("");
+  const [loadingAuth, setLoadingAuth] = useState(true);
+
   // ----- Hero State -----
   const [heroData, setHeroData] = useState<Hero | null>(null);
   const [heroTitle, setHeroTitle] = useState("");
@@ -172,6 +269,34 @@ export default function Dashboard() {
     | "universities"
   >("hero");
 
+  // ----- Authentication -----
+  useEffect(() => {
+    // Check if user is authenticated
+    const authStatus = localStorage.getItem("adminAuthenticated");
+    const email = localStorage.getItem("adminEmail");
+
+    if (authStatus === "true" && email) {
+      setIsAuthenticated(true);
+      setAdminEmail(email);
+    }
+
+    setLoadingAuth(false);
+  }, []);
+
+  const handleLoginSuccess = () => {
+    const email = localStorage.getItem("adminEmail");
+    setIsAuthenticated(true);
+    setAdminEmail(email || "Admin");
+  };
+
+  const handleLogout = () => {
+    // Clear authentication
+    localStorage.removeItem("adminAuthenticated");
+    localStorage.removeItem("adminEmail");
+    setIsAuthenticated(false);
+    setAdminEmail("");
+  };
+
   // ----- Helper function to build category tree -----
   const buildCategoryTree = (
     categories: Category[]
@@ -212,7 +337,7 @@ export default function Dashboard() {
     ): (Category & { level: number })[] => {
       nodes.forEach((node) => {
         // Create a new object without children property
-        const { ...nodeWithoutChildren } = node;
+        const { children, ...nodeWithoutChildren } = node;
         result.push({ ...nodeWithoutChildren, level: node.level });
 
         if (node.children.length > 0) {
@@ -585,16 +710,19 @@ export default function Dashboard() {
     }
   };
 
+  // Fetch data only when user is authenticated
   useEffect(() => {
-    fetchHero();
-    fetchServices();
-    fetchCategories();
-    fetchActivities();
-    fetchSectionTitles();
-    fetchAboutus();
-    fetchBlogs();
-    fetchUniversities();
-  }, []);
+    if (isAuthenticated) {
+      fetchHero();
+      fetchServices();
+      fetchCategories();
+      fetchActivities();
+      fetchSectionTitles();
+      fetchAboutus();
+      fetchBlogs();
+      fetchUniversities();
+    }
+  }, [isAuthenticated]);
 
   // ----- Category Add/Update -----
   const handleCategorySubmit = async () => {
@@ -1057,32 +1185,59 @@ export default function Dashboard() {
     setUniversityImage("");
   };
 
+  // Show loading while checking authentication
+  if (loadingAuth) {
+    return (
+      <div className="min-h-screen bg-[#f4eff1] flex items-center justify-center">
+        <div className="text-[#5b8a76] text-xl">Loading...</div>
+      </div>
+    );
+  }
+
+  // Show login page if not authenticated
+  if (!isAuthenticated) {
+    return <Login onLoginSuccess={handleLoginSuccess} />;
+  }
+
   // ---------- JSX ----------
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-[#f4eff1] text-white">
       {/* Sidebar as Dropdown for Mobile */}
       <div className="md:hidden flex flex-col w-full">
-        <button
-          className="bg-[#5b8a76] text-white px-4 py-3 flex items-center justify-between"
-          onClick={() => setSidebarOpen((open) => !open)}
-        >
-          <span className="font-bold text-lg">Dashboard Menu</span>
-          <svg
-            className={`w-6 h-6 ml-2 transition-transform ${
-              sidebarOpen ? "rotate-180" : ""
-            }`}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M19 9l-7 7-7-7"
-            />
-          </svg>
-        </button>
+        <div className="bg-[#5b8a76] text-white px-4 py-3 flex items-center justify-between">
+          <span className="font-bold text-lg">Admin Dashboard</span>
+          <div className="flex items-center gap-4">
+            <span className="text-sm hidden sm:inline">
+              Welcome, {adminEmail}
+            </span>
+            <button
+              onClick={handleLogout}
+              className="px-3 py-1 bg-red-600 rounded hover:bg-red-500 transition text-sm"
+            >
+              Logout
+            </button>
+            <button
+              className="flex items-center"
+              onClick={() => setSidebarOpen((open) => !open)}
+            >
+              <svg
+                className={`w-6 h-6 ml-2 transition-transform ${
+                  sidebarOpen ? "rotate-180" : ""
+                }`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
         {sidebarOpen && (
           <nav className="flex flex-col gap-2 bg-[#5b8a76] px-4 py-4">
             <div className="relative">
@@ -1188,7 +1343,16 @@ export default function Dashboard() {
 
       {/* Sidebar for Desktop */}
       <aside className="hidden md:flex w-64 bg-[#5b8a76] flex-col py-8 px-4 min-h-screen fixed left-0 top-0 z-20">
-        <h3 className="text-xl font-bold mb-8">Dashboard</h3>
+        <div className="flex justify-between items-center mb-8">
+          <h3 className="text-xl font-bold">Admin Dashboard</h3>
+          <button
+            onClick={handleLogout}
+            className="px-3 py-1 bg-red-600 rounded hover:bg-red-500 transition text-sm"
+          >
+            Logout
+          </button>
+        </div>
+        <div className="mb-4 text-sm text-gray-200">Welcome, {adminEmail}</div>
         <nav className="flex flex-col gap-4">
           <div className="relative group">
             <button

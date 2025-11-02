@@ -40,9 +40,17 @@ export default function Hero() {
 
   return (
     <section className="flex bg-white flex-col items-center justify-center py-12 md:py-20 px-4 sm:px-6 lg:px-8">
+      {/* Static Cover Image - Covering entire section */}
+      <div className="absolute inset-0 z-0">
+        <img
+          src="/cover.png" // Replace with your image path
+          alt="Hero background"
+          className="w-full h-full object-fill"
+        />
+      </div>
       {/* Hero Text */}
-      <div className="text-center max-w-4xl mx-auto">
-        <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-extrabold pb-4 sm:pb-6 bg-gradient-to-br from-[#020d2b] to-[#1b7a49] bg-clip-text text-transparent drop-shadow-xl leading-tight">
+      <div className="text-center bg-black/20 backdrop-blur-sm rounded-xl px-4 py-2 inline-block max-w-4xl mx-auto">
+        <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-extrabold pb-4 sm:pb-6 bg-gradient-to-br from-white to-white bg-clip-text text-transparent drop-shadow-xl leading-tight">
           {heroData?.title}
           {heroData?.subtitle && (
             <>
@@ -52,13 +60,13 @@ export default function Hero() {
           )}
         </h1>
 
-        <p className="text-sm sm:text-xl lg:text-2xl text-gray-600 mb-8 sm:mb-10 max-w-2xl mx-auto leading-relaxed px-2">
+        <p className="text-sm relative sm:text-xl lg:text-2xl text-gray-600 mb-8 sm:mb-10 max-w-2xl mx-auto leading-relaxed px-2">
           {heroData?.description}
         </p>
       </div>
 
       {/* Search Form */}
-      <div className="w-full max-w-md sm:max-w-lg lg:max-w-xl mt-4 sm:mt-6">
+      <div className="w-full relative max-w-md sm:max-w-lg lg:max-w-xl mt-4 sm:mt-6">
         <form className="w-full" onSubmit={handleSearch}>
           <div className="flex flex-col sm:flex-row items-center bg-white rounded-2xl sm:rounded-full shadow-lg border border-gray-200 px-4 py-3 sm:px-6 sm:py-3 gap-3 sm:gap-0">
             <input

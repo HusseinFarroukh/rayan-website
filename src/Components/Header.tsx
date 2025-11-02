@@ -49,7 +49,7 @@ export default function Header() {
   const isActivitiesPage = pathname === "/activities";
 
   return (
-    <header className="w-full flex justify-center mt-4 sm:mt-6 px-3 sm:px-4">
+    <header className="w-full relative z-10 flex justify-center mt-4 sm:mt-6 px-3 sm:px-4">
       <nav className="bg-white shadow-lg rounded-2xl sm:rounded-full flex items-center px-4 sm:px-6 lg:px-8 py-3 gap-3 sm:gap-6 lg:gap-8 w-full max-w-6xl relative">
         {/* Logo */}
         <div className="flex items-center gap-2 flex-shrink-0">
@@ -101,14 +101,14 @@ export default function Header() {
               </span>
               <button
                 onClick={handleSignOut}
-                className="px-4 py-2 rounded-full bg-gradient-to-br from-[#020d2b] to-[#1b7a49] hover:from-[#1b7a49]  hover:to-[#020d2b] hover:transition-all hover:duration-500 hover:ease-in-out text-white font-semibold shadow    transition text-sm lg:text-base whitespace-nowrap"
+                className="px-4 py-2 rounded-full bg-[#d94b3d] hover:bg-red-400 text-white font-semibold shadow    transition text-sm lg:text-base whitespace-nowrap"
               >
                 Sign Out
               </button>
             </>
           ) : (
             <Link
-              className="px-5 py-2.5 rounded-full bg-[#020d2b] text-white font-semibold shadow hover:bg-[#69959e] transition text-sm lg:text-base whitespace-nowrap"
+              className="px-5 py-2.5 rounded-full bg-[#d94b3d] hover:bg-red-400 text-white font-semibold shadow  transition text-sm lg:text-base whitespace-nowrap"
               href="/auth"
             >
               Sign In
@@ -192,7 +192,7 @@ export default function Header() {
                     {/* Sign Out with smaller text */}
                     <button
                       onClick={handleSignOut}
-                      className="px-3 py-2 rounded-lg bg-gradient-to-br from-[#020d2b] to-[#1b7a49] text-white font-semibold shadow hover:bg-red-400 transition text-sm"
+                      className="px-3 py-2 rounded-lg bg-[#d94b3d] text-white font-semibold shadow hover:bg-red-400 transition text-sm"
                     >
                       Sign Out
                     </button>

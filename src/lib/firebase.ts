@@ -1,6 +1,8 @@
 // lib/firebase.ts
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
+
 
 // القيم هودي بتجيبهم من Firebase Console → Project Settings → SDK setup & config
 const firebaseConfig = {
@@ -15,3 +17,5 @@ export const app = initializeApp(firebaseConfig);
 
 // Firestore Database
 export const db = getFirestore(app);
+
+export const auth = getAuth(app);
