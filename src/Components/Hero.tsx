@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 export default function Hero() {
   const [heroData, setHeroData] = useState<{
@@ -42,10 +43,12 @@ export default function Hero() {
     <section className="flex bg-white flex-col items-center justify-center py-12 md:py-20 px-4 sm:px-6 lg:px-8">
       {/* Static Cover Image - Covering entire section */}
       <div className="absolute inset-0 z-0">
-        <img
-          src="/cover.png" // Replace with your image path
+        <Image
+          src="/cover.png"
           alt="Hero background"
-          className="w-full h-full object-fill"
+          className="object-fill w-full h-full"
+          fill
+          priority
         />
       </div>
       {/* Hero Text */}

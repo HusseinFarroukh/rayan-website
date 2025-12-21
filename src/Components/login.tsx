@@ -23,7 +23,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
     try {
       await signInWithEmailAndPassword(auth, email, password);
       onLoginSuccess();
-    } catch (error: any) {
+    } catch (error: unknown) {
       setError("Invalid email or password");
       console.error("Login error:", error);
     } finally {

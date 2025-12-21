@@ -337,7 +337,7 @@ export default function Dashboard() {
     ): (Category & { level: number })[] => {
       nodes.forEach((node) => {
         // Create a new object without children property
-        const { children, ...nodeWithoutChildren } = node;
+        const { ...nodeWithoutChildren } = node;
         result.push({ ...nodeWithoutChildren, level: node.level });
 
         if (node.children.length > 0) {
