@@ -42,15 +42,7 @@ export default function Hero() {
   return (
     <section className="flex bg-white flex-col items-center justify-center py-12 md:py-20 px-4 sm:px-6 lg:px-8">
       {/* Static Cover Image - Covering entire section */}
-      <div className="absolute inset-0 z-0">
-        <Image
-          src="/cover.png"
-          alt="Hero background"
-          className="object-fill w-full h-full"
-          fill
-          priority
-        />
-      </div>
+
       {/* Hero Text */}
       <div className="text-center bg-black/20 backdrop-blur-sm rounded-xl px-4 py-2 inline-block max-w-4xl mx-auto">
         <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-extrabold pb-4 sm:pb-6 bg-gradient-to-br from-white to-white bg-clip-text text-transparent drop-shadow-xl leading-tight">
