@@ -45,7 +45,7 @@ export default function Hero() {
 
       {/* Hero Text */}
       <div className="text-center bg-black/20 backdrop-blur-sm rounded-xl px-4 py-2 inline-block max-w-4xl mx-auto">
-        <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-extrabold pb-4 sm:pb-6 bg-gradient-to-br from-white to-white bg-clip-text text-transparent drop-shadow-xl leading-tight">
+        <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-extrabold pb-4 sm:pb-6 bg-gradient-to-br from-[#020d2b] to-[#1b7a49] bg-clip-text text-transparent drop-shadow-xl leading-tight">
           {heroData?.title}
           {heroData?.subtitle && (
             <>
