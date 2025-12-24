@@ -130,9 +130,9 @@ export default function AuthPage() {
               type={showPassword ? "text" : "password"}
               placeholder="Password"
               className="w-full px-4 py-3 rounded-lg bg-white/10 border border-gray-600 text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              value={signupData.password}
+              value={loginData.password}
               onChange={(e) =>
-                setSignupData({ ...signupData, password: e.target.value })
+                setLoginData({ ...loginData, password: e.target.value })
               }
               required
             />
