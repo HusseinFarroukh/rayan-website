@@ -1422,7 +1422,7 @@ export default function Dashboard() {
                   }}
                   className="hover:bg-[#69959e] rounded px-3 py-2 transition text-left"
                 >
-                  Aboutus
+                  About us
                 </button>
                 <button
                   onClick={() => {

@@ -15,6 +15,7 @@ import { doc, setDoc } from "firebase/firestore";
 export default function AuthPage() {
   const router = useRouter();
   const [isLogin, setIsLogin] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [loginData, setLoginData] = useState({ email: "", password: "" });
@@ -126,15 +127,21 @@ export default function AuthPage() {
             />
 
             <input
-              type="password"
+              type={showPassword ? "text" : "password"}
               placeholder="Password"
               className="w-full px-4 py-3 rounded-lg bg-white/10 border border-gray-600 text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              value={loginData.password}
+              value={signupData.password}
               onChange={(e) =>
-                setLoginData({ ...loginData, password: e.target.value })
+                setSignupData({ ...signupData, password: e.target.value })
               }
               required
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? "Hide" : "Show"}
+            </button>
 
             <button
               type="submit"
@@ -204,7 +211,7 @@ export default function AuthPage() {
             />
 
             <input
-              type="password"
+              type={showPassword ? "text" : "password"}
               placeholder="Password"
               className="w-full px-4 py-3 rounded-lg bg-white/10 border border-gray-600 text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               value={signupData.password}
@@ -213,6 +220,12 @@ export default function AuthPage() {
               }
               required
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? "Hide" : "Show"}
+            </button>
 
             <button
               type="submit"
