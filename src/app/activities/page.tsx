@@ -8,7 +8,6 @@ import Header from "@/Components/Header";
 import Footer from "@/Components/Footer";
 import Image from "next/image";
 import ActivitiesSearch from "@/Components/ActivitiesSearch";
-import { useSearchParams } from "next/navigation"; // Add this import
 
 interface Activity {
   id: string;
@@ -39,12 +38,8 @@ export default function ActivitiesPage() {
   const [sectionDesc, setSectionDesc] = useState("");
   const [loading, setLoading] = useState(true);
 
-  // Get URL search parameters
-  const searchParams = useSearchParams();
-  const urlSearchQuery = searchParams.get("search");
-
-  // Filter states - initialize with URL parameter if present
-  const [searchTerm, setSearchTerm] = useState(urlSearchQuery || "");
+  // Initialize search term from URL on client side only
+  const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
 
   // Modal state
@@ -52,12 +47,16 @@ export default function ActivitiesPage() {
     null
   );
 
-  // Update searchTerm when URL parameter changes
+  // Extract search query from URL on mount (client side only)
   useEffect(() => {
-    if (urlSearchQuery) {
-      setSearchTerm(urlSearchQuery);
+    if (typeof window !== "undefined") {
+      const urlParams = new URLSearchParams(window.location.search);
+      const search = urlParams.get("search");
+      if (search) {
+        setSearchTerm(decodeURIComponent(search));
+      }
     }
-  }, [urlSearchQuery]);
+  }, []);
 
   // Fetch categories
   useEffect(() => {
@@ -179,15 +178,6 @@ export default function ActivitiesPage() {
     document.body.style.overflow = "hidden";
   };
 
-  // Add a useEffect to show a message when search results come from Hero
-  useEffect(() => {
-    if (urlSearchQuery && filteredActivities.length > 0) {
-      console.log(
-        `Search results for "${urlSearchQuery}": ${filteredActivities.length} activities found`
-      );
-    }
-  }, [filteredActivities, urlSearchQuery]);
-
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
@@ -204,12 +194,12 @@ export default function ActivitiesPage() {
             </p>
 
             {/* Show search query if it came from Hero */}
-            {urlSearchQuery && (
+            {searchTerm && (
               <div className="mt-4 mb-2">
                 <p className="text-sm text-gray-700">
                   Search results for:{" "}
                   <span className="font-semibold text-[#020d2b]">
-                    {urlSearchQuery}
+                    {searchTerm}
                   </span>
                 </p>
                 <p className="text-xs text-gray-500 mt-1">
@@ -243,14 +233,14 @@ export default function ActivitiesPage() {
             </div>
           ) : (
             <>
-              {urlSearchQuery && filteredActivities.length > 0 && (
+              {searchTerm && filteredActivities.length > 0 && (
                 <div className="mb-6 p-4 bg-gray-50 rounded-lg">
                   <h3 className="text-lg font-semibold text-[#020d2b]">
                     Search Results
                   </h3>
                   <p className="text-gray-600">
                     Showing {filteredActivities.length} activities for &quot;
-                    {urlSearchQuery}
+                    {searchTerm}&quot;
                   </p>
                 </div>
               )}
