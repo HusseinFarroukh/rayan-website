@@ -33,10 +33,20 @@ export default function Hero() {
   const handleSearch = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     const q = searchQuery.trim();
-    const url = q
-      ? `/activities?search=${encodeURIComponent(q)}`
-      : `/activities`;
-    router.push(url);
+
+    // Navigate to activities page with search query as URL parameter
+    if (q) {
+      router.push(`/activities?search=${encodeURIComponent(q)}`);
+    } else {
+      router.push("/activities");
+    }
+  };
+
+  // Handle Enter key press
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleSearch();
+    }
   };
 
   return (
@@ -77,6 +87,7 @@ export default function Hero() {
               placeholder="Search for extracurriculars..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyPress={handleKeyPress}
               className="flex-1 bg-transparent outline-none px-2 py-2 sm:py-3 text-base sm:text-lg w-full text-center sm:text-left text-[#020d2b]"
             />
             <button

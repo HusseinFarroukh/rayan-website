@@ -7,7 +7,8 @@ import { db } from "@/lib/firebase";
 import Header from "@/Components/Header";
 import Footer from "@/Components/Footer";
 import Image from "next/image";
-import ActivitiesSearch from "@/Components/ActivitiesSearch"; // new search component
+import ActivitiesSearch from "@/Components/ActivitiesSearch";
+import { useSearchParams } from "next/navigation"; // Add this import
 
 interface Activity {
   id: string;
@@ -38,14 +39,25 @@ export default function ActivitiesPage() {
   const [sectionDesc, setSectionDesc] = useState("");
   const [loading, setLoading] = useState(true);
 
-  // Filter states
-  const [searchTerm, setSearchTerm] = useState("");
+  // Get URL search parameters
+  const searchParams = useSearchParams();
+  const urlSearchQuery = searchParams.get("search");
+
+  // Filter states - initialize with URL parameter if present
+  const [searchTerm, setSearchTerm] = useState(urlSearchQuery || "");
   const [selectedCategory, setSelectedCategory] = useState("all");
 
   // Modal state
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(
     null
   );
+
+  // Update searchTerm when URL parameter changes
+  useEffect(() => {
+    if (urlSearchQuery) {
+      setSearchTerm(urlSearchQuery);
+    }
+  }, [urlSearchQuery]);
 
   // Fetch categories
   useEffect(() => {
@@ -167,6 +179,15 @@ export default function ActivitiesPage() {
     document.body.style.overflow = "hidden";
   };
 
+  // Add a useEffect to show a message when search results come from Hero
+  useEffect(() => {
+    if (urlSearchQuery && filteredActivities.length > 0) {
+      console.log(
+        `Search results for "${urlSearchQuery}": ${filteredActivities.length} activities found`
+      );
+    }
+  }, [filteredActivities, urlSearchQuery]);
+
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
@@ -181,6 +202,21 @@ export default function ActivitiesPage() {
             <p className="text-sm sm:text-base text-gray-600 max-w-2xl mx-auto px-2 sm:px-0">
               {sectionDesc}
             </p>
+
+            {/* Show search query if it came from Hero */}
+            {urlSearchQuery && (
+              <div className="mt-4 mb-2">
+                <p className="text-sm text-gray-700">
+                  Search results for:{" "}
+                  <span className="font-semibold text-[#020d2b]">
+                    {urlSearchQuery}
+                  </span>
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Found {filteredActivities.length} activities
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Search and Filters Component */}
@@ -199,57 +235,74 @@ export default function ActivitiesPage() {
           {!loading && filteredActivities.length === 0 ? (
             <div className="text-center py-8 sm:py-12">
               <h3 className="text-sm sm:text-base font-medium text-gray-900">
-                No activities found
+                No activities found {searchTerm && `for "${searchTerm}"`}
               </h3>
+              <p className="text-gray-600 mt-2 text-sm">
+                Try a different search term or category
+              </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
-              {filteredActivities.map((activity) => {
-                const categoryName = getCategoryName(activity.category);
-                return (
-                  <div
-                    key={activity.id}
-                    className="bg-white rounded-xl sm:rounded-2xl shadow hover:shadow-lg flex flex-col overflow-hidden border border-gray-100"
-                  >
-                    {activity.image ? (
-                      <div className="h-32 sm:h-40 lg:h-48 overflow-hidden relative">
-                        <Image
-                          src={activity.image}
-                          alt={activity.title}
-                          fill
-                          className="object-cover transition-transform hover:scale-105"
-                        />
-                      </div>
-                    ) : (
-                      <div className="h-32 sm:h-40 lg:h-48 bg-gray-200 flex items-center justify-center" />
-                    )}
-                    <div className="p-4 sm:p-6 flex flex-col flex-grow">
-                      <h3 className="text-lg sm:text-xl font-bold text-[#020d2b] mb-2 text-center line-clamp-2">
-                        {activity.title}
-                      </h3>
-                      <p className="text-gray-600 text-center mb-2 sm:mb-3 line-clamp-2 sm:line-clamp-3 flex-grow text-xs sm:text-sm">
-                        {activity.shortDescription ??
-                          activity.description?.slice(0, 100)}
-                      </p>
-                      {categoryName && (
-                        <div className="mb-3 sm:mb-4 text-center">
-                          <span className="inline-flex items-center text-black px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium">
-                            <span className="w-2 h-2 bg-red-500 rounded-full mr-2"></span>
-                            {categoryName}
-                          </span>
+            <>
+              {urlSearchQuery && filteredActivities.length > 0 && (
+                <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+                  <h3 className="text-lg font-semibold text-[#020d2b]">
+                    Search Results
+                  </h3>
+                  <p className="text-gray-600">
+                    Showing {filteredActivities.length} activities for &quot;
+                    {urlSearchQuery}
+                  </p>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+                {filteredActivities.map((activity) => {
+                  const categoryName = getCategoryName(activity.category);
+                  return (
+                    <div
+                      key={activity.id}
+                      className="bg-white rounded-xl sm:rounded-2xl shadow hover:shadow-lg flex flex-col overflow-hidden border border-gray-100"
+                    >
+                      {activity.image ? (
+                        <div className="h-32 sm:h-40 lg:h-48 overflow-hidden relative">
+                          <Image
+                            src={activity.image}
+                            alt={activity.title}
+                            fill
+                            className="object-cover transition-transform hover:scale-105"
+                          />
                         </div>
+                      ) : (
+                        <div className="h-32 sm:h-40 lg:h-48 bg-gray-200 flex items-center justify-center" />
                       )}
-                      <button
-                        onClick={() => openModal(activity)}
-                        className="bg-gradient-to-br from-[#020d2b] to-[#1b7a49] text-white px-3 sm:px-4 py-2 rounded-lg sm:rounded-xl mt-auto w-full"
-                      >
-                        Read More
-                      </button>
+                      <div className="p-4 sm:p-6 flex flex-col flex-grow">
+                        <h3 className="text-lg sm:text-xl font-bold text-[#020d2b] mb-2 text-center line-clamp-2">
+                          {activity.title}
+                        </h3>
+                        <p className="text-gray-600 text-center mb-2 sm:mb-3 line-clamp-2 sm:line-clamp-3 flex-grow text-xs sm:text-sm">
+                          {activity.shortDescription ??
+                            activity.description?.slice(0, 100)}
+                        </p>
+                        {categoryName && (
+                          <div className="mb-3 sm:mb-4 text-center">
+                            <span className="inline-flex items-center text-black px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium">
+                              <span className="w-2 h-2 bg-red-500 rounded-full mr-2"></span>
+                              {categoryName}
+                            </span>
+                          </div>
+                        )}
+                        <button
+                          onClick={() => openModal(activity)}
+                          className="bg-gradient-to-br from-[#020d2b] to-[#1b7a49] text-white px-3 sm:px-4 py-2 rounded-lg sm:rounded-xl mt-auto w-full"
+                        >
+                          Read More
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            </>
           )}
 
           {/* Modal */}
