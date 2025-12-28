@@ -10,6 +10,7 @@ import {
   deleteDoc,
   getDoc,
   setDoc,
+  increment,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { createClient } from "@supabase/supabase-js";
@@ -248,6 +249,10 @@ export default function Dashboard() {
   const [isUniversityUploading, setIsUniversityUploading] = useState(false);
   const [universityEditId, setUniversityEditId] = useState<string | null>(null);
 
+  // ----- User Counter State -----
+  const [userCount, setUserCount] = useState(0);
+  const [counterLoading, setCounterLoading] = useState(false);
+
   // ----- Section Titles -----
   const [servicesTitle, setServicesTitle] = useState("");
   const [activitiesTitle, setActivitiesTitle] = useState("");
@@ -267,6 +272,7 @@ export default function Dashboard() {
     | "aboutus"
     | "blogs"
     | "universities"
+    | "counter" // Added counter section
   >("hero");
 
   // ----- Authentication -----
@@ -295,6 +301,66 @@ export default function Dashboard() {
     localStorage.removeItem("adminEmail");
     setIsAuthenticated(false);
     setAdminEmail("");
+  };
+
+  // ----- Fetch User Counter -----
+  const fetchUserCounter = async () => {
+    try {
+      const counterRef = doc(db, "counters", "users");
+      const counterSnap = await getDoc(counterRef);
+      if (counterSnap.exists()) {
+        setUserCount(counterSnap.data().count || 0);
+      } else {
+        // Initialize counter if it doesn't exist
+        await setDoc(counterRef, { count: 0 });
+        setUserCount(0);
+      }
+    } catch (error) {
+      console.error("Error fetching user counter:", error);
+    }
+  };
+
+  // ----- Manual Increment Counter -----
+  const manualIncrementCounter = async () => {
+    setCounterLoading(true);
+    try {
+      const counterRef = doc(db, "counters", "users");
+      await setDoc(
+        counterRef,
+        {
+          count: increment(1),
+        },
+        { merge: true }
+      );
+      setUserCount((prev) => prev + 1);
+      alert("Counter incremented by 1!");
+    } catch (error) {
+      console.error("Error incrementing counter:", error);
+      alert("Failed to increment counter");
+    } finally {
+      setCounterLoading(false);
+    }
+  };
+
+  // ----- Reset Counter -----
+  const resetUserCounter = async () => {
+    const confirmed = confirm(
+      "Are you sure you want to reset the user counter to 0?"
+    );
+    if (!confirmed) return;
+
+    setCounterLoading(true);
+    try {
+      const counterRef = doc(db, "counters", "users");
+      await setDoc(counterRef, { count: 0 });
+      setUserCount(0);
+      alert("User counter reset to 0!");
+    } catch (error) {
+      console.error("Error resetting counter:", error);
+      alert("Failed to reset counter");
+    } finally {
+      setCounterLoading(false);
+    }
   };
 
   // ----- Helper function to build category tree -----
@@ -442,14 +508,23 @@ export default function Dashboard() {
       const snapshot = await getDocs(collection(db, "blogs"));
       const data = snapshot.docs
         .filter((d) => d.id !== "blogsTitle" && d.id !== "BlogsTitle")
-        .map((d) => ({
-          id: d.id,
-          ...(d.data() as Omit<Blog, "id"> & {
+        .map((d) => {
+          const raw = d.data() as Omit<Blog, "id"> & {
             excerpt?: string;
             link?: string;
             image?: string;
-          }),
-        }));
+          };
+          const normalize = (s?: string) =>
+            s
+              ? s.replace(/\r\n/g, "\n").replace(/<br\s*\/?>(?=>)?/gi, "\n")
+              : "";
+          return {
+            id: d.id,
+            ...raw,
+            description: normalize(raw.description),
+            excerpt: normalize(raw.excerpt),
+          };
+        });
       setBlogs(data);
     } catch (error) {
       console.error("Error fetching blogs:", error);
@@ -721,6 +796,7 @@ export default function Dashboard() {
       fetchAboutus();
       fetchBlogs();
       fetchUniversities();
+      fetchUserCounter(); // Fetch user counter
     }
   }, [isAuthenticated]);
 
@@ -1029,13 +1105,18 @@ export default function Dashboard() {
     }
 
     try {
+      // normalize newlines and convert any HTML <br> to LF before saving
+      const normalizedDescription = blogDescription
+        .replace(/\r\n/g, "\n")
+        .replace(/<br\s*\/?>(?=>)?/gi, "\n");
+
       if (blogEditId) {
         const docRef = doc(db, "blogs", blogEditId);
         await setDoc(
           docRef,
           {
             title: blogTitle,
-            description: blogDescription,
+            description: normalizedDescription,
             excerpt: blogExcerpt,
             link: blogLink,
             image: blogImage,
@@ -1047,7 +1128,7 @@ export default function Dashboard() {
       } else {
         await addDoc(collection(db, "blogs"), {
           title: blogTitle,
-          description: blogDescription,
+          description: normalizedDescription,
           excerpt: blogExcerpt,
           link: blogLink,
           image: blogImage,
@@ -1080,7 +1161,13 @@ export default function Dashboard() {
         };
         setBlogEditId(blog.id);
         setBlogTitle(data.title || "");
-        setBlogDescription(data.description || "");
+        // convert stored <br> tags to real newlines for textarea editing
+        const desc = data.description
+          ? data.description
+              .replace(/\r\n/g, "\n")
+              .replace(/<br\s*\/?>(?=>)?/gi, "\n")
+          : "";
+        setBlogDescription(desc);
         setBlogExcerpt(data.excerpt || "");
         setBlogLink(data.link || "");
         setBlogImage(data.image || "");
@@ -1210,6 +1297,7 @@ export default function Dashboard() {
             <span className="text-sm hidden sm:inline">
               Welcome, {adminEmail}
             </span>
+
             <button
               onClick={handleLogout}
               className="px-3 py-1 bg-red-600 rounded hover:bg-red-500 transition text-sm"
@@ -1334,6 +1422,16 @@ export default function Dashboard() {
                   >
                     Universities
                   </button>
+                  <button
+                    onClick={() => {
+                      setActiveSection("counter");
+                      setSidebarOpen(false);
+                      setHomeDropdownOpen(false);
+                    }}
+                    className="hover:bg-[#69959e] rounded px-3 py-2 transition text-left"
+                  >
+                    User Counter
+                  </button>
                 </div>
               )}
             </div>
@@ -1353,6 +1451,30 @@ export default function Dashboard() {
           </button>
         </div>
         <div className="mb-4 text-sm text-gray-200">Welcome, {adminEmail}</div>
+
+        {/* User Counter Display in Sidebar */}
+        <div className="mb-6 p-3 bg-[#69959e] rounded-lg">
+          <div className="flex justify-between items-center mb-2">
+            <span className="font-medium">Total Users:</span>
+            <span className="text-xl font-bold">{userCount}</span>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={manualIncrementCounter}
+              disabled={counterLoading}
+              className="flex-1 px-2 py-1 bg-[#5b8a76] rounded hover:bg-[#4a7563] transition text-xs disabled:opacity-50"
+            >
+              {counterLoading ? "..." : "+1"}
+            </button>
+            <button
+              onClick={() => setActiveSection("counter")}
+              className="flex-1 px-2 py-1 bg-[#020d2b] rounded hover:bg-[#1b1b3d] transition text-xs"
+            >
+              Manage
+            </button>
+          </div>
+        </div>
+
         <nav className="flex flex-col gap-4">
           <div className="relative group">
             <button
@@ -1441,6 +1563,15 @@ export default function Dashboard() {
                   className="hover:bg-[#69959e] rounded px-3 py-2 transition text-left"
                 >
                   Universities
+                </button>
+                <button
+                  onClick={() => {
+                    setActiveSection("counter");
+                    setHomeDropdownOpen(false);
+                  }}
+                  className="hover:bg-[#69959e] rounded px-3 py-2 transition text-left"
+                >
+                  User Counter
                 </button>
               </div>
             )}
@@ -2091,7 +2222,7 @@ export default function Dashboard() {
                   >
                     <div>
                       <h3 className="font-bold">{blog.title}</h3>
-                      <p className="text-sm">
+                      <p className="text-sm whitespace-pre-wrap">
                         {blog.excerpt ?? blog.description}
                       </p>
                       {blog.image && (
@@ -2274,6 +2405,118 @@ export default function Dashboard() {
                     </div>
                   ))
                 )}
+              </div>
+            </section>
+          )}
+
+          {/* User Counter Section */}
+          {activeSection === "counter" && (
+            <section id="counter" className="bg-[#5b8a76] p-6 rounded shadow">
+              <h2 className="text-2xl font-bold mb-4">
+                User Counter Management
+              </h2>
+              <div className="bg-[#69959e] p-6 rounded-lg">
+                <div className="text-center mb-8">
+                  <div className="text-6xl font-bold mb-4">{userCount}</div>
+                  <p className="text-xl text-gray-200">
+                    Total Registered Users
+                  </p>
+                  <p className="text-sm text-gray-300 mt-2">
+                    Counter automatically increments when new users sign up
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                  <div className="bg-[#5b8a76] p-4 rounded-lg">
+                    <h3 className="font-bold text-lg mb-3">Manual Control</h3>
+                    <p className="text-sm text-gray-200 mb-4">
+                      Manually adjust the counter for testing or corrections
+                    </p>
+                    <button
+                      onClick={manualIncrementCounter}
+                      disabled={counterLoading}
+                      className="w-full px-6 py-3 bg-[#020d2b] rounded-lg hover:bg-[#1b1b3d] transition flex items-center justify-center gap-3 disabled:opacity-50 mb-3"
+                    >
+                      <span className="text-xl">+1</span>
+                      <span>Manual Increment</span>
+                      {counterLoading && (
+                        <svg
+                          className="animate-spin h-5 w-5"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                            fill="none"
+                          />
+                        </svg>
+                      )}
+                    </button>
+                    <div className="text-xs text-gray-300 text-center">
+                      Click to increase counter by 1
+                    </div>
+                  </div>
+
+                  <div className="bg-[#5b8a76] p-4 rounded-lg">
+                    <h3 className="font-bold text-lg mb-3">Reset Counter</h3>
+                    <p className="text-sm text-gray-200 mb-4">
+                      Reset the counter to 0 (use with caution)
+                    </p>
+                    <button
+                      onClick={resetUserCounter}
+                      disabled={counterLoading}
+                      className="w-full px-6 py-3 bg-red-600 rounded-lg hover:bg-red-500 transition disabled:opacity-50 mb-3"
+                    >
+                      Reset Counter to 0
+                    </button>
+                    <div className="text-xs text-red-300 text-center">
+                      Warning: This action cannot be undone
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-[#5b8a76] p-4 rounded">
+                  <h3 className="font-bold mb-3">Counter Information</h3>
+                  <ul className="text-sm text-gray-200 space-y-2">
+                    <li className="flex items-center gap-2">
+                      <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                      <span>
+                        Counter is stored in Firestore under
+                        &quot;counters/users&quot;
+                      </span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                      <span>Automatically increments when users sign up</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="w-2 h-2 bg-yellow-500 rounded-full"></span>
+                      <span>Manual increment available for testing</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="w-2 h-2 bg-red-500 rounded-full"></span>
+                      <span>Reset only when absolutely necessary</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                      <span>Real-time updates when new users register</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="mt-6 text-center">
+                  <button
+                    onClick={fetchUserCounter}
+                    disabled={counterLoading}
+                    className="px-4 py-2 bg-gray-600 rounded hover:bg-gray-500 transition disabled:opacity-50"
+                  >
+                    Refresh Counter
+                  </button>
+                </div>
               </div>
             </section>
           )}

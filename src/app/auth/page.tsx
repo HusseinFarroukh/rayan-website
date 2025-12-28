@@ -10,7 +10,7 @@ import {
   updateProfile,
 } from "firebase/auth";
 const auth = getAuth();
-import { doc, setDoc } from "firebase/firestore";
+import { doc, setDoc, increment, updateDoc } from "firebase/firestore";
 
 export default function AuthPage() {
   const router = useRouter();
@@ -25,6 +25,24 @@ export default function AuthPage() {
     email: "",
     password: "",
   });
+
+  // Function to increment user counter
+  const incrementUserCounter = async () => {
+    try {
+      const counterRef = doc(db, "counters", "users");
+
+      // First check if the counter exists
+      await setDoc(
+        counterRef,
+        {
+          count: increment(1),
+        },
+        { merge: true }
+      );
+    } catch (error) {
+      console.error("Error updating user counter:", error);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,6 +80,9 @@ export default function AuthPage() {
           email: email,
           createdAt: new Date(),
         });
+
+        // Increment user counter
+        await incrementUserCounter();
 
         alert("Account created successfully!");
         router.push("/"); // redirect to home after signup
@@ -139,8 +160,9 @@ export default function AuthPage() {
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
+              className="text-blue-400 hover:text-blue-300 transition text-sm"
             >
-              {showPassword ? "Hide" : "Show"}
+              {showPassword ? "Hide Password" : "Show Password"}
             </button>
 
             <button
@@ -210,22 +232,25 @@ export default function AuthPage() {
               required
             />
 
-            <input
-              type={showPassword ? "text" : "password"}
-              placeholder="Password"
-              className="w-full px-4 py-3 rounded-lg bg-white/10 border border-gray-600 text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              value={signupData.password}
-              onChange={(e) =>
-                setSignupData({ ...signupData, password: e.target.value })
-              }
-              required
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-            >
-              {showPassword ? "Hide" : "Show"}
-            </button>
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                placeholder="Password"
+                className="w-full px-4 py-3 rounded-lg bg-white/10 border border-gray-600 text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-10"
+                value={signupData.password}
+                onChange={(e) =>
+                  setSignupData({ ...signupData, password: e.target.value })
+                }
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-blue-400 hover:text-blue-300 transition text-sm"
+              >
+                {showPassword ? "Hide" : "Show"}
+              </button>
+            </div>
 
             <button
               type="submit"

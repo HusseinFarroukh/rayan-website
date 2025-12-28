@@ -199,7 +199,7 @@ export default function Activities() {
           >
             <button
               onClick={() => setSelectedActivity(null)}
-              className="absolute top-4 right-4 z-100 text-gray-500 hover:text-gray-800 font-bold text-xl"
+              className="absolute top-1 right-2 z-100 text-gray-500 hover:text-gray-800 font-bold text-xl"
             >
               &times;
             </button>

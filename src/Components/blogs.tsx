@@ -14,25 +14,59 @@ interface Blog {
   image?: string; // Add image field
 }
 
+interface BlogsTitleDoc {
+  title?: string;
+  description?: string;
+}
+
 export default function Blogs() {
   const [blogs, setBlogs] = useState<Blog[]>([]);
   const [sectionTitle, setSectionTitle] = useState("");
   const [sectionDesc, setSectionDesc] = useState("");
   const [selectedBlog, setSelectedBlog] = useState<Blog | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   const sliderRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    // Check for mobile screen size
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    // Initial check
+    checkMobile();
+
+    // Add resize listener
+    window.addEventListener("resize", checkMobile);
+
+    return () => {
+      window.removeEventListener("resize", checkMobile);
+    };
+  }, []);
 
   useEffect(() => {
     // Listen for blogs (real-time)
     const unsubscribeBlogs = onSnapshot(collection(db, "blogs"), (snapshot) => {
       const data = snapshot.docs
         .filter((d) => d.id !== "blogsTitle")
-        .map((d) => ({
-          ...(d.data() as Blog),
-          id: d.id,
-          image: d.data().image || "", // Ensure image field is included
-        }));
+        .map((d) => {
+          const raw = d.data() as Blog;
+          const normalize = (s?: string) =>
+            s
+              ? s.replace(/\r\n/g, "\n").replace(/<br\s*\/?>(?=>)?/gi, "\n")
+              : s || "";
+          return {
+            id: d.id,
+            title: raw.title,
+            excerpt: normalize(raw.excerpt),
+            description: normalize(raw.description),
+            link: raw.link,
+            image: raw.image || "",
+          } as Blog;
+        });
       setBlogs(data);
     });
 
@@ -41,10 +75,7 @@ export default function Blogs() {
       doc(db, "blogs", "blogsTitle"),
       (docSnap) => {
         if (docSnap.exists()) {
-          const data = docSnap.data() as {
-            title?: string;
-            description?: string;
-          };
+          const data = docSnap.data() as BlogsTitleDoc;
           setSectionTitle(data.title || "");
           setSectionDesc(data.description || "");
         }
@@ -60,9 +91,22 @@ export default function Blogs() {
   // Duplicate items to create a seamless loop
   const loopItems = [...blogs, ...blogs];
 
-  // compute duration based on number of items
-  const baseDuration = 12;
-  const duration = Math.max(baseDuration, Math.round(blogs.length * 4));
+  // Compute duration based on number of items and screen size - MUCH FASTER
+  const getDuration = () => {
+    const baseDuration = 1.5; // Reduced from 3 to 1.5 seconds (50% faster)
+    const itemCount = blogs.length;
+
+    // For mobile: EXTREMELY fast animation
+    if (isMobile) {
+      // Mobile: Very fast - minimum 1 second, scales with item count
+      return Math.max(1, Math.round(itemCount * 0.5)); // 75% faster than original mobile
+    }
+
+    // For desktop: Much faster than before
+    return Math.max(baseDuration, Math.round(itemCount * 1)); // Reduced from itemCount * 2 to *1 (50% faster)
+  };
+
+  const duration = getDuration();
 
   // Static local images (fallback)
   const staticImages = [
@@ -84,6 +128,7 @@ export default function Blogs() {
 
   // Handle read more click
   const handleReadMore = (blog: Blog) => {
+    setIsPaused(true); // Pause the animation when modal opens
     setSelectedBlog(blog);
     setIsModalOpen(true);
     document.body.style.overflow = "hidden"; // Prevent background scrolling
@@ -93,6 +138,7 @@ export default function Blogs() {
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setSelectedBlog(null);
+    setIsPaused(false); // Resume animation when modal closes
     document.body.style.overflow = "unset"; // Re-enable scrolling
   };
 
@@ -103,15 +149,30 @@ export default function Blogs() {
     }
   };
 
+  // Handle mouse enter on slider (pause animation)
+  const handleSliderMouseEnter = () => {
+    if (!isModalOpen) {
+      setIsPaused(true);
+    }
+  };
+
+  // Handle mouse leave on slider (resume animation)
+  const handleSliderMouseLeave = () => {
+    if (!isModalOpen) {
+      setIsPaused(false);
+    }
+  };
+
   return (
     <section className="py-12 sm:py-16 lg:py-20 bg-white">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Section Title */}
+        {/* Section Title - Always 1 line */}
         <div className="flex flex-col items-center mb-8 sm:mb-10 lg:mb-12">
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-center mb-3 sm:mb-4 text-[#020d2b]">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-center mb-3 sm:mb-4 text-[#020d2b] line-clamp-1">
             {sectionTitle || "Latest Blog Posts"}
           </h2>
-          <p className="text-base sm:text-lg text-gray-600 text-center max-w-2xl px-2 sm:px-0">
+          {/* Section Description - Always 2 lines */}
+          <p className="text-base sm:text-lg text-gray-600 text-center max-w-2xl px-2 sm:px-0 line-clamp-2">
             {sectionDesc ||
               "Stay updated with our latest insights and stories."}
           </p>
@@ -119,11 +180,18 @@ export default function Blogs() {
 
         {/* Continuous looping marquee when more than 3 blogs */}
         {blogs.length > 3 ? (
-          <div className="relative overflow-hidden py-4">
+          <div
+            className="relative overflow-hidden py-4"
+            onMouseEnter={handleSliderMouseEnter}
+            onMouseLeave={handleSliderMouseLeave}
+          >
             <div
               ref={sliderRef}
               className="flex gap-4 sm:gap-6 marquee"
-              style={{ animationDuration: `${duration}s` }}
+              style={{
+                animationDuration: `${duration}s`,
+                animationPlayState: isPaused ? "paused" : "running",
+              }}
               aria-hidden={false}
             >
               {loopItems.map((post, idx) => (
@@ -143,10 +211,12 @@ export default function Blogs() {
                       target.src = staticImages[idx % staticImages.length];
                     }}
                   />
-                  <h3 className="text-lg sm:text-xl font-bold mb-2 text-center text-[#020d2b] line-clamp-2">
+                  {/* Blog title - Always 1 line */}
+                  <h3 className="text-lg sm:text-xl font-bold mb-2 text-center text-[#020d2b] line-clamp-1 h-12 flex items-center justify-center">
                     {post.title}
                   </h3>
-                  <p className="text-gray-600 text-center mb-3 sm:mb-4 text-sm sm:text-base line-clamp-3">
+                  {/* Blog excerpt - Always 2 lines */}
+                  <p className="text-gray-600 text-center mb-3 sm:mb-4 text-sm sm:text-base line-clamp-2 h-12 whitespace-pre-wrap">
                     {post.excerpt}
                   </p>
                   <button
@@ -184,10 +254,12 @@ export default function Blogs() {
                     target.src = staticImages[idx % staticImages.length];
                   }}
                 />
-                <h3 className="text-lg sm:text-xl font-bold mb-2 text-center text-[#020d2b] line-clamp-2">
+                {/* Blog title - Always 1 line */}
+                <h3 className="text-lg sm:text-xl font-bold mb-2 text-center text-[#020d2b] line-clamp-1 h-12 flex items-center justify-center">
                   {post.title}
                 </h3>
-                <p className="text-gray-600 text-center mb-3 sm:mb-4 text-sm sm:text-base line-clamp-3 flex-1">
+                {/* Blog excerpt - Always 2 lines */}
+                <p className="text-gray-600 text-center mb-3 sm:mb-4 text-sm sm:text-base line-clamp-2 h-12 flex-1 whitespace-pre-wrap">
                   {post.excerpt}
                 </p>
                 <button
@@ -256,7 +328,7 @@ export default function Blogs() {
                 </h2>
 
                 <div className="prose max-w-none">
-                  <p className="text-gray-600 text-base sm:text-lg leading-relaxed sm:leading-loose">
+                  <p className="text-gray-600 text-base sm:text-lg leading-relaxed sm:leading-loose whitespace-pre-wrap">
                     {selectedBlog.description || selectedBlog.excerpt}
                   </p>
                 </div>
@@ -293,16 +365,16 @@ export default function Blogs() {
         }
 
         /* Line clamp utilities */
-        .line-clamp-2 {
+        .line-clamp-1 {
           display: -webkit-box;
-          -webkit-line-clamp: 2;
+          -webkit-line-clamp: 1;
           -webkit-box-orient: vertical;
           overflow: hidden;
         }
 
-        .line-clamp-3 {
+        .line-clamp-2 {
           display: -webkit-box;
-          -webkit-line-clamp: 3;
+          -webkit-line-clamp: 2;
           -webkit-box-orient: vertical;
           overflow: hidden;
         }

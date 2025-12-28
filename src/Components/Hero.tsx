@@ -30,13 +30,13 @@ export default function Hero() {
     return () => unsubscribe();
   }, []);
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      router.push(
-        `/activities?search=${encodeURIComponent(searchQuery.trim())}`
-      );
-    }
+  const handleSearch = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const q = searchQuery.trim();
+    const url = q
+      ? `/activities?search=${encodeURIComponent(q)}`
+      : `/activities`;
+    router.push(url);
   };
 
   return (
