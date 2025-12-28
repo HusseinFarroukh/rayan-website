@@ -53,14 +53,16 @@ export default function Header() {
       <nav className="bg-white shadow-lg rounded-2xl sm:rounded-full flex items-center px-4 sm:px-6 lg:px-8 py-3 gap-3 sm:gap-6 lg:gap-8 w-full max-w-6xl relative">
         {/* Logo */}
         <div className="flex items-center gap-2 flex-shrink-0">
-          <Image
-            src="/logo.png"
-            alt="Logo"
-            width={100}
-            height={50}
-            className="object-contain w-[150px]  h-[55px] sm:w-[100px] sm:h-[50px]  md:w-32 lg:w-50 "
-            priority
-          />
+          <a href="">
+            <Image
+              src="/logo.png"
+              alt="Logo"
+              width={100}
+              height={50}
+              className="object-contain w-[150px]  h-[55px] sm:w-[100px] sm:h-[50px]  md:w-32 lg:w-50 "
+              priority
+            />
+          </a>
         </div>
 
         {/* Desktop Navigation */}
