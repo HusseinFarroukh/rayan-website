@@ -10,7 +10,7 @@ import {
   updateProfile,
 } from "firebase/auth";
 const auth = getAuth();
-import { doc, setDoc, increment, updateDoc } from "firebase/firestore";
+import { doc, setDoc, increment } from "firebase/firestore";
 
 export default function AuthPage() {
   const router = useRouter();
